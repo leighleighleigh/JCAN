@@ -3,10 +3,6 @@ name = "jorzacan"
 version = "0.1.0"
 edition = "2021"
 
-[[bin]]
-name = "jorzacan"
-path = "src/main.rs"
-
 [lib]
 name = "jorzacan"
 path = "src/lib.rs"
@@ -29,3 +25,7 @@ nix = "0.26"
 pyo3 = { version = "0.17.3", feature = ["extension-module"] }
 serial_test = "0.9"
 socketcan = { git = "https://github.com/socketcan-rs/socketcan-rs", version = "2.0.0-pre.0" }
+
+
+[build-dependencies]
+cbindgen = "0.24.3"

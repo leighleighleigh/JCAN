@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include <jorzacan_t.h>
+#include <jorzacan.h>
 
 /* 
 C++-11 example of using the jorzacan library.
