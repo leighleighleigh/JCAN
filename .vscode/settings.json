@@ -68,6 +68,7 @@
         "typeinfo": "cpp",
         "variant": "cpp",
         "bitset": "cpp",
-        "semaphore": "cpp"
+        "semaphore": "cpp",
+        "*.rs": "cpp"
     }
 }

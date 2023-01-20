@@ -2,12 +2,7 @@
 name = "jorzacan"
 version = "0.1.0"
 edition = "2021"
-
-[lib]
-name = "jorzacan"
-path = "src/lib.rs"
-crate-type = ["cdylib"]
-
+publish = false
 
 [dependencies]
 anyhow = "1.0"
@@ -25,7 +20,13 @@ nix = "0.26"
 pyo3 = { version = "0.17.3", feature = ["extension-module"] }
 serial_test = "0.9"
 socketcan = { git = "https://github.com/socketcan-rs/socketcan-rs", version = "2.0.0-pre.0" }
-
+cxx = "1.0"
+cxxbridge-flags = "1.0.87"
+cxxbridge-macro = "*"
+link-cplusplus = "1.0"
 
 [build-dependencies]
-cbindgen = "0.24.3"
+cxx-build = "1.0"
+cxxbridge-flags = "*"
+cc = "*"
+
