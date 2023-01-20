@@ -1,3 +1,0 @@
-/home/leigh/GitHub/JorzaCAN/jorzacan/build/CMakeFiles/jorzacan.dir
-/home/leigh/GitHub/JorzaCAN/jorzacan/build/CMakeFiles/edit_cache.dir
-/home/leigh/GitHub/JorzaCAN/jorzacan/build/CMakeFiles/rebuild_cache.dir

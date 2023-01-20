@@ -1,1 +1,0 @@
-/usr/bin/c++ CMakeFiles/jorzacan.dir/src/main.cpp.o CMakeFiles/jorzacan.dir/target/cxxbridge/jorzacan/src/lib.rs.cc.o -o jorzacan  ../target/debug/libjorzacan.a 
