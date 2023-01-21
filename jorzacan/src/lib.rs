@@ -1,4 +1,3 @@
-
 extern crate socketcan;
 use embedded_can::{blocking::Can, Frame as EmbeddedFrame, Id, StandardId, ExtendedId};
 use socketcan::{CanFrame, CanSocket, CanSocketOpenError, CanError, Socket};
@@ -8,8 +7,8 @@ mod ffi {
 
     struct JorzaFrame {
         id: u32,
-        data: Vec<u8>,
         dlc: u8,
+        data: Vec<u8>,
     }
 
     #[derive(Debug)]
@@ -18,9 +17,12 @@ mod ffi {
     }
 
     extern "Rust" {
+        #[cxx_name = "Bus"]
         type JorzaBus;
+        #[cxx_name = "open_bus"]
         fn new_jorzabus(interface: String) -> Box<JorzaBus>;
         fn receive(self: &mut JorzaBus) -> Result<JorzaFrame>;
+        fn send(self: &mut JorzaBus, frame: JorzaFrame) -> Result<()>;
     }
 
     unsafe extern "C++" {
@@ -33,6 +35,8 @@ struct JorzaBus {
 
 // Implements JorzaBus methods
 impl JorzaBus {
+
+    // Blocks until a frame is received
     fn receive(&mut self) -> Result<ffi::JorzaFrame, std::io::Error> {
         let frame = self.socket.read_frame()?;
         // Convert the embedded_can::Frame to a JorzaFrame
@@ -47,6 +51,26 @@ impl JorzaBus {
         };
         Ok(frame)
     }
+
+    // Blocks until a frame is sent
+    fn send(&mut self, frame: ffi::JorzaFrame) -> Result<(), std::io::Error> {
+        // First check if id needs to be Standard or Extended
+        let id = if frame.id > 0x7FF {
+            Id::Extended(ExtendedId::new(frame.id).unwrap())
+        } else {
+            Id::Standard(StandardId::new(frame.id as u16).unwrap())
+        };
+
+        // Convert the JorzaFrame to a CanFrame
+        let frame = CanFrame::new(
+            id,
+            frame.data.as_slice(),
+        ).unwrap();
+
+        // Send it!
+        self.socket.write_frame(&frame)?;
+        Ok(())
+    }
 }
 
 // Implement Display for JorzaError
@@ -55,6 +79,7 @@ impl std::fmt::Display for ffi::JorzaError {
         write!(f, "{}", self.message)
     }
 }
+
 
 // Public 'builder' method used to create C++ instances of the opaque JorzaBus type
 fn new_jorzabus(interface: String) -> Box<JorzaBus> {

@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 14)
 
 set(CARGO_MANIFEST ${CMAKE_SOURCE_DIR}/Cargo.toml)
 set(CARGO_TARGET_DIR ${CMAKE_SOURCE_DIR}/target)
+set(CARGO_GEN_DIR ${CMAKE_SOURCE_DIR}/generated)
 
 set(JORZACAN_SOURCE_FILE ${CMAKE_SOURCE_DIR}/src/lib.rs)
 set(JORZACAN_BRIDGE_CPP ${CARGO_TARGET_DIR}/cxxbridge/jorzacan/src/lib.rs.cc)
