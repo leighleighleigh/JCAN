@@ -36,7 +36,7 @@ fn main() {
     // We will be targeting the 'jorzacan' subdirectory - this is hard-coded.
     let manifest_dir = project_dir;
 
-    let out_dir = Path::new(&manifest_dir).join("out").join(&target).join("jorzacan");
+    let out_dir = Path::new(&manifest_dir).join("out").join(&profile).join(&target).join("jorzacan");
     println!("cargo:warning=out_dir: {}", out_dir.display());
 
     // If is_debug, copy the debug library, otherwise copy the release library
@@ -44,13 +44,6 @@ fn main() {
         .join("target")
         .join(profile)
         .join("libjorzacan.a");
-
-    // If path or file doesnt exist, skip build rs
-    if !lib_build_path.exists() {
-        // Print path
-        println!("cargo:warning=libjorzacan.a not found at: {}", lib_build_path.display());
-        return;
-    }
 
     // Create the out directory
     fs::create_dir_all(&out_dir).unwrap();

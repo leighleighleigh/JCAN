@@ -5,6 +5,6 @@ edition = "2021"
 publish = false
 
 [dependencies]
-jorzacan = { version = "0.1.0", path = "../jorzacan" }
-jorzacan_python = { version = "0.1.0", path = "../jorzacan-python" }
+jorzacan = { version = "*", path = "../jorzacan" }
+jorzacan_python = { version = "*", path = "../jorzacan-python" }
 man = "0.3.0"
