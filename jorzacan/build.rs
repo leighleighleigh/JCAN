@@ -1,7 +1,4 @@
 #[allow(unused_must_use)]
-use std::path::Path;
-use std::{env, fs};
-
 fn main() {
 
     // Only run this script AFTER the regular build has happened
