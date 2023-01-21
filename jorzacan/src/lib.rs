@@ -5,17 +5,17 @@ use socketcan::{CanFrame, CanSocket, Socket};
 
 
 #[cxx::bridge(namespace = "org::jorzacan")]
-mod ffi {
+pub mod ffi {
 
     #[cxx_name = "Frame"]
     #[derive(Clone)]
-    struct JorzaFrame {
+    pub struct JorzaFrame {
         id: u32,
         data: Vec<u8>,
     }
 
     #[derive(Debug)]
-    struct JorzaError {
+    pub struct JorzaError {
         message: String,
     }
 
@@ -34,8 +34,7 @@ mod ffi {
     }
 }
 
-
-struct JorzaBus {
+pub struct JorzaBus {
     socket: CanSocket,
 }
 
@@ -43,7 +42,7 @@ struct JorzaBus {
 impl JorzaBus {
 
     // Blocks until a frame is received
-    fn receive(&mut self) -> Result<ffi::JorzaFrame, std::io::Error> {
+    pub fn receive(&mut self) -> Result<ffi::JorzaFrame, std::io::Error> {
         let frame = self.socket.read_frame()?;
         // Convert the embedded_can::Frame to a JorzaFrame
         let frame = ffi::JorzaFrame {
@@ -58,7 +57,7 @@ impl JorzaBus {
     }
 
     // Blocks until a frame is sent
-    fn send(&mut self, frame: ffi::JorzaFrame) -> Result<(), std::io::Error> {
+    pub fn send(&mut self, frame: ffi::JorzaFrame) -> Result<(), std::io::Error> {
         // First check if id needs to be Standard or Extended
         let id = if frame.id > 0x7FF {
             Id::Extended(ExtendedId::new(frame.id).unwrap())
@@ -86,7 +85,7 @@ impl std::fmt::Display for ffi::JorzaError {
 }
 
 // Public 'builder' method used to create C++ instances of the opaque JorzaBus type
-fn new_jorzabus(interface: String) -> Box<JorzaBus> {
+pub fn new_jorzabus(interface: String) -> Box<JorzaBus> {
     // If an error is caught here, it will be propagated to the C++ side
     // as a std::runtime_error, with the message "CanSocketOpenError"
     // TODO: Make this fail gracefully on C++
@@ -96,7 +95,7 @@ fn new_jorzabus(interface: String) -> Box<JorzaBus> {
 
 // Builder for jorzaframe, used to create C++ instances of the opaque JorzaFrame type
 // Takes in a u32 id, and a Vec<u8> data
-fn new_jorzaframe(id: u32, data: Vec<u8>) -> Result<ffi::JorzaFrame, std::io::Error> {
+pub fn new_jorzaframe(id: u32, data: Vec<u8>) -> Result<ffi::JorzaFrame, std::io::Error> {
     Ok(ffi::JorzaFrame {
         id,
         data,
@@ -105,7 +104,7 @@ fn new_jorzaframe(id: u32, data: Vec<u8>) -> Result<ffi::JorzaFrame, std::io::Er
 
 // Implement a to_string method for JorzaFrame, returning String, used for C++ and Rust
 impl ffi::JorzaFrame {
-    fn to_string(&self) -> String {
+    pub fn to_string(&self) -> String {
         let mut s = String::new();
         s.push_str(&format!("ID: 0x{:X} Data: ", self.id));
         for byte in self.data.iter() {

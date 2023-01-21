@@ -7,7 +7,7 @@ publish = false
 [lib]
 name = "jorzacan"
 path = "src/lib.rs"
-crate-type = ["staticlib"]
+crate-type = ["staticlib", "rlib"]
 
 [dependencies]
 anyhow = "1.0"
@@ -22,7 +22,6 @@ libc = "0.2"
 nb = "1.0"
 neli = { version = "0.6", optional = false }
 nix = "0.26"
-pyo3 = { version = "0.17.3", features = ["extension-module"] }
 serial_test = "0.9"
 socketcan = { git = "https://github.com/socketcan-rs/socketcan-rs", version = "2.0.0-pre.0" }
 cxx = "1.0"

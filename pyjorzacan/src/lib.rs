@@ -4,12 +4,14 @@
 // the libjorzacan.a file isn't bloated with python junk.
 // It also helps the cxx system not get confused.
 extern crate pyo3;
+extern crate jorzacan;
+
 use pyo3::exceptions::{PyOSError};
 use pyo3::prelude::*;
 use pyo3::types::{PyModule};
 use pyo3::{PyResult};
 
-use jorzacan::{JorzaBus, ffi::JorzaFrame, new_jorzabus, new_jorzaframe};
+use jorzacan::*;
 
 #[pyclass]
 #[pyo3{name = "Bus"}]
@@ -73,7 +75,7 @@ impl PyJorzaFrame {
 
 
 #[pymodule]
-fn jorzacan(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+fn pyjorzacan(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyJorzaBus>()?;
     m.add_class::<PyJorzaFrame>()?;
 
