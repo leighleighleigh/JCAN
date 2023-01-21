@@ -1,37 +1,11 @@
-// client/build.rs
-
-extern crate cbindgen;
-
-use cbindgen::Config;
-use std::env;
-use std::path::PathBuf;
-
+#[allow(unused_must_use)]
 fn main() {
-    let crate_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
 
-    let package_name = env::var("CARGO_PKG_NAME").unwrap();
-    let output_file = target_dir()
-        .join(format!("{}.hpp", package_name))
-        .display()
-        .to_string();
+    // Only run this script AFTER the regular build has happened
+    // This is because we need to copy the generated library and headers to the generated directory
+    cxx_build::bridge("src/lib.rs").compile("jorzacan");
 
-    let config = Config {
-        namespace: Some(String::from("ffi")),
-        ..Default::default()
-    };
+    // Tell cargo to rerun this script if any of the files we copied change
+    println!("cargo:rerun-if-changed=src/lib.rs");
 
-    cbindgen::generate_with_config(&crate_dir, config)
-        .unwrap()
-        .write_to_file(&output_file);
-}
-
-/// Find the location of the `target/` directory. Note that this may be
-/// overridden by `cmake`, so we also need to check the `CARGO_TARGET_DIR`
-/// variable.
-fn target_dir() -> PathBuf {
-    if let Ok(target) = env::var("CARGO_TARGET_DIR") {
-        PathBuf::from(target)
-    } else {
-        PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap()).join("target")
-    }
 }

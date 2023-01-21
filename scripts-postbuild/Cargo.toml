@@ -1,0 +1,10 @@
+[package]
+name = "scripts_postbuild"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+jorzacan = { version = "*", path = "../jorzacan" }
+jorzacan_python = { version = "*", path = "../jorzacan-python" }
+man = "0.3.0"

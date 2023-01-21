@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "jorzacan",
+    "jorzacan-python",
+    "scripts-postbuild",
+]
