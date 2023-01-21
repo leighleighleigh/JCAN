@@ -75,7 +75,7 @@ impl PyJorzaFrame {
 
 
 #[pymodule]
-fn pyjorzacan(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+fn jorzacan_python(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyJorzaBus>()?;
     m.add_class::<PyJorzaFrame>()?;
 
