@@ -1,6 +1,6 @@
 [workspace]
 members = [
     "jorzacan",
-    "pyjorzacan",
-    "jorzacan-postbuild",
+    "jorzacan-python",
+    "scripts-postbuild",
 ]
