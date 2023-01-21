@@ -5,6 +5,9 @@
 # Built files are ignored
 /out/
 
+# Release files are ignored
+/release/
+
 # Any folder names 'build' is ignored
 **/build/**
 
