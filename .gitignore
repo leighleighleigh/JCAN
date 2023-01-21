@@ -17,3 +17,4 @@ Cargo.lock
 
 # .envrc direnv, we don't want to git-track the virtual env
 .direnv/**
+.venv/**

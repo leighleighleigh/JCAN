@@ -1,3 +1,0 @@
-/home/leigh/GitHub/JorzaCAN/examples/cpp_cansend/build/CMakeFiles/cpp_cansend.dir
-/home/leigh/GitHub/JorzaCAN/examples/cpp_cansend/build/CMakeFiles/edit_cache.dir
-/home/leigh/GitHub/JorzaCAN/examples/cpp_cansend/build/CMakeFiles/rebuild_cache.dir

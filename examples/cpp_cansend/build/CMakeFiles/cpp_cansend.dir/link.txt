@@ -1,1 +1,0 @@
-/usr/bin/c++ CMakeFiles/cpp_cansend.dir/src/main.cpp.o CMakeFiles/cpp_cansend.dir/include/jorzacan/jorzacan.cc.o -o cpp_cansend  ../include/jorzacan/libjorzacan.a 
