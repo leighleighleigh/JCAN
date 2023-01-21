@@ -1,37 +1,7 @@
 # JorzaCAN
-An easy-to-use SocketCAN library for Python and C++, built in Rust.
+An easy-to-use SocketCAN library for Python and C++, built in Rust, using [cxx-rs](https://cxx.rs/) and [maturin](https://github.com/PyO3/maturin) (a build tool for [pyo3](https://pyo3.rs/)).
 
 > Warning: I have never used Rust before and I don't know what I'm doing
-
-## Quickstart
-
-```bash
-# Install rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-
-# Get code
-git clone https://github.com/leighleighleigh/JorzaCAN
-
-# Setup virtual environment (REQUIRED for maturin build tool)
-python3 -m venv .venv
-
-# Activate environment and install requirements 
-source .venv/bin/activate
-pip install -r requirements.txt
-
-# Build (release mode)
-# This will automatically source .venv/bin/activate if needed
-./build.sh
-
-# Install and use!
-# ... for Python
-pip install ./out/wheels/jorzacan_python-0.1.0-cp38-abi3-manylinux_2_34_x86_64.whl
-
-# ... for C++14 add this path to the includes list,
-#     and then '#include <jorzacan.h>'
-./out/release/x86_64-unknown-linux-gnu/jorzacan 
-
-```
 
 ## Feature Status / TODO
  - [x] Blocking send/receive in C++ (`jorzacan.h`) and Python (`jorzacan_python`)
@@ -49,3 +19,58 @@ pip install ./out/wheels/jorzacan_python-0.1.0-cp38-abi3-manylinux_2_34_x86_64.w
  - Workspace-level `cargo build` is broken, use `build.sh` instead.
  - C++ examples must be built manually with CMake, their `include` folder is symlinked to the `/out/.../jorzacan` directory
 
+## Installation
+
+```bash
+# Download and unzip the latest release from the releases page
+RELEASE="https://github.com/leighleighleigh/JorzaCAN/releases/download/v0.1.0/jorzacan-0.1.0.tar.gz"
+curl -L "${RELEASE}" | tar -xz
+
+# ... Python, install the wheel
+pip install ./jorzacan-0.1.0/jorzacan_python-0.1.0-cp38-abi3-manylinux_2_34_x86_64.whl
+
+# ... for C++, copy the headers to your include path
+#     and then '#include <jorzacan.h>'
+cp -r ./jorzacan-0.1.0/include/* /usr/local/include/
+```
+
+## Development
+```bash
+# Install rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# Get code
+git clone https://github.com/leighleighleigh/JorzaCAN
+
+# Setup virtual environment (REQUIRED for maturin build tool)
+python3 -m venv .venv
+
+# Activate environment and install requirements 
+source .venv/bin/activate
+pip install -r requirements.txt
+
+## Build (debug/manual)
+# ... to build the base JorzaCAN library
+cd jorzacan
+cargo build
+
+# ... to move the build outputs to the correct location
+cd scripts-postbuild
+cargo build
+
+# ... to build the python bindings, and install it to the virtual environment
+cd jorzacan-python
+maturin develop
+
+
+## Build (release mode)
+# This will automatically source .venv/bin/activate if needed
+./build.sh
+# Install and use!
+# ... for Python
+pip install ./out/wheels/jorzacan_python-0.1.0-cp38-abi3-manylinux_2_34_x86_64.whl
+# ... for C++14 add this path to the includes list,
+#     and then '#include <jorzacan.h>'
+./out/release/x86_64-unknown-linux-gnu/jorzacan 
+
+```
