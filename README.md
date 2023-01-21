@@ -25,7 +25,7 @@ pip install -r requirements.txt
 
 # Install and use!
 # ... for Python
-pip install ./target/wheels/jorzacan_python..._.wheel
+pip install ./out/wheels/jorzacan_python-0.1.0-cp38-abi3-manylinux_2_34_x86_64.whl
 
 # ... for C++14 add this path to the includes list,
 #     and then '#include <jorzacan.h>'
@@ -35,6 +35,7 @@ pip install ./target/wheels/jorzacan_python..._.wheel
 
 ## Feature Status / TODO
  - [x] Blocking send/receive in C++ (`jorzacan.h`) and Python (`jorzacan_python`)
+ - [ ] `aarch64` build for Jetson TX2
  - [ ] Convenience methods for Frame building, e.g: setting specific bits in a byte, named IDs
  - [ ] Replace `maturin` build system with manual scripts, or `setuptools-rust`
  - [ ] Rename of `jorzacan_python` to just `jorzacan`
