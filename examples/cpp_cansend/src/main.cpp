@@ -18,14 +18,12 @@ int main(int argc, char **argv) {
     while (1) {
 
         // Send a frame
-        JorzaFrame frame;
+        Frame frame;
         frame.id = 0x42;
-        frame.dlc = 4;
         frame.data.push_back(0x01);
         frame.data.push_back(0x02);
         frame.data.push_back(0x03);
         frame.data.push_back(0x04);
-        assert(frame.data.size() == frame.dlc);
 
         bus->send(frame);
     }

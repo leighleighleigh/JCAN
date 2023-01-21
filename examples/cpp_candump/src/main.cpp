@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
         Frame frame = bus->receive();
 
         // Print frame using it's to_string method
-        // printf("%s\n", frame.to_string().c_str());
+        printf("%s\n", frame.to_string().c_str());
     }
 
     return 0;

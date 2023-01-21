@@ -1,1 +1,0 @@
-/usr/bin/c++ CMakeFiles/cpp_candump.dir/src/main.cpp.o CMakeFiles/cpp_candump.dir/include/jorzacan/jorzacan.cc.o -o cpp_candump  ../include/jorzacan/libjorzacan.a 
