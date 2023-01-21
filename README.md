@@ -12,7 +12,15 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 # Get code
 git clone https://github.com/leighleighleigh/JorzaCAN
 
+# Setup virtual environment (REQUIRED for maturin build tool)
+python3 -m venv .venv
+
+# Activate environment and install requirements 
+source .venv/bin/activate
+pip install -r requirements.txt
+
 # Build (release mode)
+# This will automatically source .venv/bin/activate if needed
 ./build.sh
 
 # Install and use!
