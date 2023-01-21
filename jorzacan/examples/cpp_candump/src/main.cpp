@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <vector>
-#include "jorzacan/src/lib.rs.h"
+#include "jorzacan.h"
 
 using namespace org::jorzacan;
 

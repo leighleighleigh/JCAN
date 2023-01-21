@@ -4,8 +4,8 @@ project(cpp_cansend)
 # ROS Foxy / Ubuntu 20 targets C++14
 set(CMAKE_CXX_STANDARD 14)
 
-set(JORZACAN_BRIDGE_CPP ${CMAKE_SOURCE_DIR}/include/jorzacan/src/lib.rs.cc)
-set(JORZACAN_LIB ${CMAKE_SOURCE_DIR}/include/${CMAKE_STATIC_LIBRARY_PREFIX}jorzacan${CMAKE_STATIC_LIBRARY_SUFFIX})
+set(JORZACAN_BRIDGE_CPP ${CMAKE_SOURCE_DIR}/include/jorzacan/jorzacan.cc)
+set(JORZACAN_LIB ${CMAKE_SOURCE_DIR}/include/jorzacan/${CMAKE_STATIC_LIBRARY_PREFIX}jorzacan${CMAKE_STATIC_LIBRARY_SUFFIX})
 
 add_executable(cpp_cansend src/main.cpp ${JORZACAN_BRIDGE_CPP})
 
@@ -13,14 +13,10 @@ target_include_directories(
         cpp_cansend
         PRIVATE
         include/
+        ${CMAKE_SOURCE_DIR}/include/jorzacan/
 )
 
 target_link_libraries(cpp_cansend ${JORZACAN_LIB})
-
-# set_target_properties(
-#         cpp_cansend
-#         PROPERTIES ADDITIONAL_CLEAN_FILES ${CARGO_TARGET_DIR}
-# )
 
 # Windows-only configuration
 if(WIN32)
