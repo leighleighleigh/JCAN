@@ -942,7 +942,7 @@ public:
 
 namespace org {
   namespace jorzacan {
-    struct JorzaFrame;
+    struct Frame;
     struct JorzaError;
     struct Bus;
   }
@@ -950,16 +950,16 @@ namespace org {
 
 namespace org {
 namespace jorzacan {
-#ifndef CXXBRIDGE1_STRUCT_org$jorzacan$JorzaFrame
-#define CXXBRIDGE1_STRUCT_org$jorzacan$JorzaFrame
-struct JorzaFrame final {
+#ifndef CXXBRIDGE1_STRUCT_org$jorzacan$Frame
+#define CXXBRIDGE1_STRUCT_org$jorzacan$Frame
+struct Frame final {
   ::std::uint32_t id;
-  ::std::uint8_t dlc;
   ::rust::Vec<::std::uint8_t> data;
 
+  ::rust::String to_string() const noexcept;
   using IsRelocatable = ::std::true_type;
 };
-#endif // CXXBRIDGE1_STRUCT_org$jorzacan$JorzaFrame
+#endif // CXXBRIDGE1_STRUCT_org$jorzacan$Frame
 
 #ifndef CXXBRIDGE1_STRUCT_org$jorzacan$JorzaError
 #define CXXBRIDGE1_STRUCT_org$jorzacan$JorzaError
@@ -973,8 +973,8 @@ struct JorzaError final {
 #ifndef CXXBRIDGE1_STRUCT_org$jorzacan$Bus
 #define CXXBRIDGE1_STRUCT_org$jorzacan$Bus
 struct Bus final : public ::rust::Opaque {
-  ::org::jorzacan::JorzaFrame receive();
-  void send(::org::jorzacan::JorzaFrame frame);
+  ::org::jorzacan::Frame receive();
+  void send(::org::jorzacan::Frame frame);
   ~Bus() = delete;
 
 private:
@@ -992,9 +992,13 @@ extern "C" {
 
 ::org::jorzacan::Bus *org$jorzacan$cxxbridge1$new_jorzabus(::rust::String *interface) noexcept;
 
-::rust::repr::PtrLen org$jorzacan$cxxbridge1$Bus$receive(::org::jorzacan::Bus &self, ::org::jorzacan::JorzaFrame *return$) noexcept;
+::rust::repr::PtrLen org$jorzacan$cxxbridge1$Bus$receive(::org::jorzacan::Bus &self, ::org::jorzacan::Frame *return$) noexcept;
 
-::rust::repr::PtrLen org$jorzacan$cxxbridge1$Bus$send(::org::jorzacan::Bus &self, ::org::jorzacan::JorzaFrame *frame) noexcept;
+::rust::repr::PtrLen org$jorzacan$cxxbridge1$Bus$send(::org::jorzacan::Bus &self, ::org::jorzacan::Frame *frame) noexcept;
+
+::rust::repr::PtrLen org$jorzacan$cxxbridge1$new_jorzaframe(::std::uint32_t id, ::rust::Vec<::std::uint8_t> *data, ::org::jorzacan::Frame *return$) noexcept;
+
+void org$jorzacan$cxxbridge1$Frame$to_string(::org::jorzacan::Frame const &self, ::rust::String *return$) noexcept;
 } // extern "C"
 
 ::std::size_t Bus::layout::size() noexcept {
@@ -1009,8 +1013,8 @@ extern "C" {
   return ::rust::Box<::org::jorzacan::Bus>::from_raw(org$jorzacan$cxxbridge1$new_jorzabus(&interface));
 }
 
-::org::jorzacan::JorzaFrame Bus::receive() {
-  ::rust::MaybeUninit<::org::jorzacan::JorzaFrame> return$;
+::org::jorzacan::Frame Bus::receive() {
+  ::rust::MaybeUninit<::org::jorzacan::Frame> return$;
   ::rust::repr::PtrLen error$ = org$jorzacan$cxxbridge1$Bus$receive(*this, &return$.value);
   if (error$.ptr) {
     throw ::rust::impl<::rust::Error>::error(error$);
@@ -1018,12 +1022,28 @@ extern "C" {
   return ::std::move(return$.value);
 }
 
-void Bus::send(::org::jorzacan::JorzaFrame frame) {
-  ::rust::ManuallyDrop<::org::jorzacan::JorzaFrame> frame$(::std::move(frame));
+void Bus::send(::org::jorzacan::Frame frame) {
+  ::rust::ManuallyDrop<::org::jorzacan::Frame> frame$(::std::move(frame));
   ::rust::repr::PtrLen error$ = org$jorzacan$cxxbridge1$Bus$send(*this, &frame$.value);
   if (error$.ptr) {
     throw ::rust::impl<::rust::Error>::error(error$);
   }
+}
+
+::org::jorzacan::Frame new_jorzaframe(::std::uint32_t id, ::rust::Vec<::std::uint8_t> data) {
+  ::rust::ManuallyDrop<::rust::Vec<::std::uint8_t>> data$(::std::move(data));
+  ::rust::MaybeUninit<::org::jorzacan::Frame> return$;
+  ::rust::repr::PtrLen error$ = org$jorzacan$cxxbridge1$new_jorzaframe(id, &data$.value, &return$.value);
+  if (error$.ptr) {
+    throw ::rust::impl<::rust::Error>::error(error$);
+  }
+  return ::std::move(return$.value);
+}
+
+::rust::String Frame::to_string() const noexcept {
+  ::rust::MaybeUninit<::rust::String> return$;
+  org$jorzacan$cxxbridge1$Frame$to_string(*this, &return$.value);
+  return ::std::move(return$.value);
 }
 } // namespace jorzacan
 } // namespace org

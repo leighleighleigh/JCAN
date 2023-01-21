@@ -874,7 +874,7 @@ std::size_t align_of() {
 
 namespace org {
   namespace jorzacan {
-    struct JorzaFrame;
+    struct Frame;
     struct JorzaError;
     struct Bus;
   }
@@ -882,16 +882,16 @@ namespace org {
 
 namespace org {
 namespace jorzacan {
-#ifndef CXXBRIDGE1_STRUCT_org$jorzacan$JorzaFrame
-#define CXXBRIDGE1_STRUCT_org$jorzacan$JorzaFrame
-struct JorzaFrame final {
+#ifndef CXXBRIDGE1_STRUCT_org$jorzacan$Frame
+#define CXXBRIDGE1_STRUCT_org$jorzacan$Frame
+struct Frame final {
   ::std::uint32_t id;
-  ::std::uint8_t dlc;
   ::rust::Vec<::std::uint8_t> data;
 
+  ::rust::String to_string() const noexcept;
   using IsRelocatable = ::std::true_type;
 };
-#endif // CXXBRIDGE1_STRUCT_org$jorzacan$JorzaFrame
+#endif // CXXBRIDGE1_STRUCT_org$jorzacan$Frame
 
 #ifndef CXXBRIDGE1_STRUCT_org$jorzacan$JorzaError
 #define CXXBRIDGE1_STRUCT_org$jorzacan$JorzaError
@@ -905,8 +905,8 @@ struct JorzaError final {
 #ifndef CXXBRIDGE1_STRUCT_org$jorzacan$Bus
 #define CXXBRIDGE1_STRUCT_org$jorzacan$Bus
 struct Bus final : public ::rust::Opaque {
-  ::org::jorzacan::JorzaFrame receive();
-  void send(::org::jorzacan::JorzaFrame frame);
+  ::org::jorzacan::Frame receive();
+  void send(::org::jorzacan::Frame frame);
   ~Bus() = delete;
 
 private:
@@ -919,5 +919,7 @@ private:
 #endif // CXXBRIDGE1_STRUCT_org$jorzacan$Bus
 
 ::rust::Box<::org::jorzacan::Bus> open_bus(::rust::String interface) noexcept;
+
+::org::jorzacan::Frame new_jorzaframe(::std::uint32_t id, ::rust::Vec<::std::uint8_t> data);
 } // namespace jorzacan
 } // namespace org
