@@ -6,5 +6,4 @@ publish = false
 
 [dependencies]
 jorzacan = { version = "*", path = "../jorzacan" }
-jorzacan_python = { version = "*", path = "../jorzacan-python" }
 man = "0.3.0"

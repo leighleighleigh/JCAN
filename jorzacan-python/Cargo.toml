@@ -12,6 +12,9 @@ crate-type = ["cdylib"]
 [dependencies]
 anyhow = "1.0"
 jorzacan = { version = "*", path = "../jorzacan" }
-pyo3 = { version = "0.17.3", features = ["extension-module"] }
+pyo3 = { version = "0.17.3", features = ["abi3-py38", "extension-module"] }
+
+[build-dependencies]
+pyo3-build-config = "*"
 
 
