@@ -11,21 +11,17 @@ C++-14 example of using the jorzacan library.
 
 // main function which opens a JorzaBus, and prints incoming frames
 int main(int argc, char **argv) {
-    // Open the CAN bus
+    // Open the CAN bus, and un-boxes it!
     Bus *bus = org::jorzacan::open_bus("vcan0").into_raw();
 
     // Run forever
     while (1) {
 
         // Receve a frame
-        JorzaFrame frame = bus->receive();
+        Frame frame = bus->receive();
 
-        // Print the frame id, dlc, and data bytes - in candump format!
-        printf("%08x#%02x", frame.id, frame.dlc);
-        for (int i = 0; i < frame.dlc; i++) {
-            printf("%02x", frame.data[i]);
-        }
-        printf("\n");
+        // Print frame using it's to_string method
+        // printf("%s\n", frame.to_string().c_str());
     }
 
     return 0;
