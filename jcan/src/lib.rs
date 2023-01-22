@@ -30,7 +30,7 @@ pub mod ffi {
         fn to_string(self: &JFrame) -> String;
         fn set_id_filter(self: &mut JBus, allowed: Vec<u32>) -> Result<()>;
         fn clear_id_filter(self: &mut JBus) -> Result<()>;
-        fn receive_any(self: &mut JBus) -> Result<Vec<JFrame>>;
+        fn receive_nonblocking(self: &mut JBus) -> Result<Vec<JFrame>>;
     }
 
     unsafe extern "C++" {
@@ -62,7 +62,7 @@ impl JBus {
     }
 
     // Non-blocking receive, returns a vector of frames, if any are available!
-    pub fn receive_any(&mut self) -> Result<Vec<ffi::JFrame>, std::io::Error> {
+    pub fn receive_nonblocking(&mut self) -> Result<Vec<ffi::JFrame>, std::io::Error> {
         // Set self to non-blocking
         self.socket.set_nonblocking(true)?;
         // Create a vector to store frames

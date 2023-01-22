@@ -63,8 +63,8 @@ impl PyJBus {
     }
 
     // Implement receive_any, which returns a list of frames
-    fn receive_any(&mut self) -> PyResult<Vec<PyJFrame>> {
-        let frames = self.bus.receive_any().map_err(|e| {
+    fn receive_nonblocking(&mut self) -> PyResult<Vec<PyJFrame>> {
+        let frames = self.bus.receive_nonblocking().map_err(|e| {
             PyOSError::new_err(format!("Error receiving frames: {}", e))
         })?;
         let mut py_frames = Vec::new();
