@@ -20,19 +20,7 @@ An easy-to-use SocketCAN library for Python and C++, built in Rust, using [cxx-r
  - C++ examples must be built manually with CMake, their `include` folder is symlinked to the `/out/.../jorzacan` directory
 
 ## Installation
-
-```bash
-# Download and unzip the latest release from the releases page
-RELEASE="https://github.com/leighleighleigh/JorzaCAN/releases/download/v0.1.0/jorzacan-0.1.0.tar.gz"
-curl -L "${RELEASE}" | tar -xz
-
-# ... Python, install the wheel
-pip install ./jorzacan-0.1.0/jorzacan_python-0.1.0-cp38-abi3-manylinux_2_34_x86_64.whl
-
-# ... for C++, copy the headers to your include path
-#     and then '#include <jorzacan.h>'
-cp -r ./jorzacan-0.1.0/include/* /usr/local/include/
-```
+Download the latest builds from the [Releases Page](https://github.com/leighleighleigh/JorzaCAN/releases), and add them to your include path or install it into your Python environment!
 
 ## Development
 ```bash
