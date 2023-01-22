@@ -3,13 +3,13 @@ from setuptools_rust import Binding, RustExtension
 
 
 setup(
-    name="jorzacan",
+    name="jcan",
     version="0.1.1",
-    packages=["jorzacan"],
+    packages=["jcan"],
     zip_safe=False,
     rust_extensions=[
         RustExtension(
-            "jorzacan.jorzacan_python",
+            "jcan.jcan_python",
             path="Cargo.toml",
             binding=Binding.PyO3,
             py_limited_api='auto'

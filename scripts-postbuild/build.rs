@@ -12,15 +12,15 @@ fn project_root() -> PathBuf {
 fn main() {
     // Whenever we build, we will copy the static library and the cxx-bridge generated headers to the `out` directory.
     // The input files are
-    //   target/<profile>/libjorzacan.a
-    //   target/cxxbridge/jorzacan/src/lib.rs.h
-    //   target/cxxbridge/jorzacan/src/lib.rs.cc
+    //   target/<profile>/libjcan.a
+    //   target/cxxbridge/jcan/src/lib.rs.h
+    //   target/cxxbridge/jcan/src/lib.rs.cc
     //   target/cxxbridge/rust/cxx.h
     // These files are moved to the `out` directory, which is the crate root
-    // out/<target>/jorzacan
-    //    - libjorzacan.a
-    //    - jorzacan.h
-    //    - jorzacan.cc
+    // out/<target>/jcan
+    //    - libjcan.a
+    //    - jcan.h
+    //    - jcan.cc
     //    - cxx.h
     // This directry can then easily be include-ed in C++ projects
     
@@ -33,10 +33,10 @@ fn main() {
     let project_dir = project_root();
     println!("cargo:warning=project_dir: {}", project_dir.display());
 
-    // We will be targeting the 'jorzacan' subdirectory - this is hard-coded.
+    // We will be targeting the 'jcan' subdirectory - this is hard-coded.
     let manifest_dir = project_dir;
 
-    let out_dir = Path::new(&manifest_dir).join("out").join(&profile).join(&target).join("jorzacan");
+    let out_dir = Path::new(&manifest_dir).join("out").join(&profile).join(&target).join("jcan");
     println!("cargo:warning=out_dir: {}", out_dir.display());
 
     // If is_debug, copy the debug library, otherwise copy the release library
@@ -45,23 +45,23 @@ fn main() {
         .join("target")
         .join(target)
         .join(profile)
-        .join("libjorzacan.a");
+        .join("libjcan.a");
 
     // Create the out directory
     fs::create_dir_all(&out_dir).unwrap();
 
     // Copy the library to the out directory
-    fs::copy(&lib_build_path, &out_dir.join("libjorzacan.a")).unwrap();
+    fs::copy(&lib_build_path, &out_dir.join("libjcan.a")).unwrap();
 
     // Copy the cxxbridge generated headers to the out directory
     fs::copy(
         Path::new(&manifest_dir)
             .join("target")
             .join("cxxbridge")
-            .join("jorzacan")
+            .join("jcan")
             .join("src")
             .join("lib.rs.h"),
-        &out_dir.join("jorzacan.h"),
+        &out_dir.join("jcan.h"),
     ).unwrap();
 
     // Copy the cxxbridge generated source to the out directory
@@ -69,10 +69,10 @@ fn main() {
         Path::new(&manifest_dir)
             .join("target")
             .join("cxxbridge")
-            .join("jorzacan")
+            .join("jcan")
             .join("src")
             .join("lib.rs.cc"),
-        &out_dir.join("jorzacan.cc"),
+        &out_dir.join("jcan.cc"),
     ).unwrap();
 
     // Copy the cxxbridge generated source to the out directory

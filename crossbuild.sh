@@ -30,7 +30,7 @@ then
 fi
 
 # This function takes a TARGET as an argument, and builds the library for that target
-# It then moves the build artifacts to out/<profile>/<target>/jorzacan/
+# It then moves the build artifacts to out/<profile>/<target>/jcan/
 function build_target {
     CROSSTARGET="${1}"
     export CROSS_CONTAINER_ENGINE=podman
@@ -38,18 +38,18 @@ function build_target {
     # Very important to clean, incase old crates for x86 are present
     cargo clean
 
-    cross build --package jorzacan --target $CROSSTARGET --release
+    cross build --package jcan --target $CROSSTARGET --release
     cross build --package scripts_postbuild --target $CROSSTARGET --release
 
     # python build uses a special pyo3 image
     export CARGO=cross
     export CARGO_BUILD_TARGET=${CROSSTARGET}
-    export CROSS_CONFIG=${SCRIPT_DIR}/jorzacan-python/Cross.toml
+    export CROSS_CONFIG=${SCRIPT_DIR}/jcan-python/Cross.toml
 
-    cross build --package jorzacan_python --target $CROSSTARGET --release
+    cross build --package jcan_python --target $CROSSTARGET --release
 
-    # Run setuptools-rust on jorzacan_python
-    cd jorzacan-python
+    # Run setuptools-rust on jcan_python
+    cd jcan-python
     rm -rf ./dist
     rm -rf ./build
 
@@ -71,7 +71,7 @@ function build_target {
 
     # Copy the resulting wheels to out folder
     mkdir -p out/wheels
-    cp -r jorzacan-python/dist/* out/wheels/
+    cp -r jcan-python/dist/* out/wheels/
 }
 
 # Build for aarch64

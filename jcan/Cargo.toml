@@ -1,11 +1,11 @@
 [package]
-name = "jorzacan"
+name = "jcan"
 version = "0.1.1"
 edition = "2021"
 publish = false
 
 [lib]
-name = "jorzacan"
+name = "jcan"
 path = "src/lib.rs"
 crate-type = ["staticlib", "rlib"]
 

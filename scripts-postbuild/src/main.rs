@@ -1,3 +1,3 @@
 fn main() {
-    println!("Running jorzacan-postbuild main.rs! This doesn't do anything...");
+    println!("Running jcan-postbuild main.rs! This doesn't do anything...");
 }

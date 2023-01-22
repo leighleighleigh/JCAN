@@ -1,53 +1,53 @@
 // Separate library for the Python wrappers, using 
 // pyo3 and the maturin build system.
 // This is built separately to the main library, so that
-// the libjorzacan.a file isn't bloated with python junk.
+// the libjcan.a file isn't bloated with python junk.
 // It also helps the cxx system not get confused.
 extern crate pyo3;
-extern crate jorzacan;
+extern crate jcan;
 
 use pyo3::exceptions::{PyOSError};
 use pyo3::prelude::*;
 use pyo3::types::{PyModule};
 use pyo3::{PyResult};
 
-use jorzacan::*;
+use jcan::*;
 
 #[pyclass]
 #[pyo3{name = "Bus"}]
-struct PyJorzaBus {
-    bus: JorzaBus,
+struct PyJBus {
+    bus: JBus,
 }
 
 #[pyclass]
 #[pyo3{name = "Frame"}]
 #[derive(Clone)]
-struct PyJorzaFrame {
-    frame: ffi::JorzaFrame,
+struct PyJFrame {
+    frame: ffi::JFrame,
 }
 
-// Implement the 'new' method for the PyJorzaBus, which makes a call to new_jorzabus
+// Implement the 'new' method for the PyJBus, which makes a call to new_jbus
 #[pymethods]
-impl PyJorzaBus {
+impl PyJBus {
     #[new]
     fn new(interface: String) -> PyResult<Self> {
-        Ok(PyJorzaBus {
-            bus: *new_jorzabus(interface),
+        Ok(PyJBus {
+            bus: *new_jbus(interface),
         })
     }
 
-    // Implement the receive method for the PyJorzaBus
-    fn receive(&mut self) -> PyResult<PyJorzaFrame> {
+    // Implement the receive method for the PyJBus
+    fn receive(&mut self) -> PyResult<PyJFrame> {
         let frame = self.bus.receive().map_err(|e| {
             PyOSError::new_err(format!("Error receiving frame: {}", e))
         })?;
-        Ok(PyJorzaFrame {
+        Ok(PyJFrame {
             frame,
         })
     }
 
-    // Implement the send method for the PyJorzaBus
-    fn send(&mut self, frame: PyJorzaFrame) -> PyResult<()> {
+    // Implement the send method for the PyJBus
+    fn send(&mut self, frame: PyJFrame) -> PyResult<()> {
         self.bus.send(frame.frame).map_err(|e| {
             PyOSError::new_err(format!("Error sending frame: {}", e))
         })?;
@@ -55,13 +55,13 @@ impl PyJorzaBus {
     }
 }
 
-// Implement the 'new' method for the PyJorzaFrame, which makes a cal to new_jorzaframe
+// Implement the 'new' method for the PyJFrame, which makes a cal to new_jframe
 #[pymethods]
-impl PyJorzaFrame {
+impl PyJFrame {
     #[new]
     fn new(id: u32, data: Vec<u8>) -> PyResult<Self> {
-        Ok(PyJorzaFrame {
-            frame: new_jorzaframe(id, data).map_err(|e| {
+        Ok(PyJFrame {
+            frame: new_jframe(id, data).map_err(|e| {
                 PyOSError::new_err(format!("Error creating frame: {}", e))
             })?,
         })
@@ -75,9 +75,9 @@ impl PyJorzaFrame {
 
 
 #[pymodule]
-fn jorzacan_python(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
-    m.add_class::<PyJorzaBus>()?;
-    m.add_class::<PyJorzaFrame>()?;
+fn jcan_python(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+    m.add_class::<PyJBus>()?;
+    m.add_class::<PyJFrame>()?;
 
     Ok(())
 }
