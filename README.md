@@ -1,5 +1,5 @@
 # JorzaCAN
-An easy-to-use SocketCAN library for Python and C++, built in Rust, using [cxx-rs](https://cxx.rs/) and [maturin](https://github.com/PyO3/maturin) (a build tool for [pyo3](https://pyo3.rs/)).
+An easy-to-use SocketCAN library for Python and C++, built in Rust, using [cxx-rs](https://cxx.rs/) and [pyo3](https://pyo3.rs/).
 
 > Warning: I have never used Rust before and I don't know what I'm doing
 
