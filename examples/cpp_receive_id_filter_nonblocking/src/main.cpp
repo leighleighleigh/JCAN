@@ -18,9 +18,16 @@ int main(int argc, char **argv) {
     bus->set_id_filter({0x42, 0x66});
 
     // Run forever
-    // while (1) {
-        // TODO
-    // }
+    while (1) {
+        // We will be calling bus->receive_nonblocking(), which returns
+        // a dynamic size of Vec<JFrame> so we need to use auto
+        auto frames = bus->receive_nonblocking();
+
+        // auto hides all the type-casting crimes, thankyou auto
+        for (auto frame : frames) {
+            printf("%s", frame.to_string().c_str());
+        }
+    }
 
     return 0;
 }
