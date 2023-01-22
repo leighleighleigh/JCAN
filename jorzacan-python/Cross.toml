@@ -1,0 +1,5 @@
+[target.aarch64-unknown-linux-gnu]
+env.passthrough = [
+    "RUST_BACKTRACE",
+    "RUST_LOG",
+]

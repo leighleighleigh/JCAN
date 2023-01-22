@@ -12,7 +12,7 @@ rm -rf "${SCRIPT_DIR}/release"
 mkdir "${SCRIPT_DIR}/release"
 
 # Get the current git tag
-GIT_TAG=$(git describe --tags)
+GIT_TAG=$(git tag)
 
 # If the current git tag is not a release tag, exit
 if [[ "${GIT_TAG}" != "v"* ]];
@@ -25,7 +25,7 @@ fi
 GIT_TAG=${GIT_TAG:1}
 
 # Copy the wheel(s) to the release directory
-cp "${SCRIPT_DIR}/out/wheels/jorzacan_python-${GIT_TAG}-"*.whl "${SCRIPT_DIR}/release/"
+cp "${SCRIPT_DIR}/out/wheels/jorzacan-${GIT_TAG}-"*.whl "${SCRIPT_DIR}/release/"
 
 # For each subdirectory of out/release/, representing a <target>/jorzacan combination
 # we will copy the jorzacan library to the release directory with the name jorzacan_<target>

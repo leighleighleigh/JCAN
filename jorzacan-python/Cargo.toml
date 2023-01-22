@@ -1,20 +1,19 @@
 [package]
 name = "jorzacan_python"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 publish = false
 
 [lib]
 name = "jorzacan_python"
 path = "src/lib.rs"
-crate-type = ["cdylib"]
+crate-type = ["cdylib","rlib"]
 
 [dependencies]
 anyhow = "1.0"
 jorzacan = { version = "*", path = "../jorzacan" }
-pyo3 = { version = "0.17.3", features = ["abi3-py38", "extension-module"] }
+pyo3 = { version = "0.17.3", features = ["abi3-py38", "extension-module", "generate-import-lib"] }
 
 [build-dependencies]
 pyo3-build-config = "*"
-
 

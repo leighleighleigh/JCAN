@@ -23,7 +23,7 @@ fn main() {
     //    - jorzacan.cc
     //    - cxx.h
     // This directry can then easily be include-ed in C++ projects
-
+    
     let target = env::var("TARGET").unwrap();
     println!("cargo:warning=target: {}", target);
 
@@ -40,8 +40,10 @@ fn main() {
     println!("cargo:warning=out_dir: {}", out_dir.display());
 
     // If is_debug, copy the debug library, otherwise copy the release library
+    // If iscrossbuild, another 'target' subdir is added
     let lib_build_path = Path::new(&manifest_dir)
         .join("target")
+        .join(target)
         .join(profile)
         .join("libjorzacan.a");
 
