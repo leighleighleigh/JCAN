@@ -9,6 +9,7 @@ An easy-to-use SocketCAN library for Python and C++, built in Rust, using [cxx-r
  - [x] Replace `maturin` build system with manual scripts, or `setuptools-rust`
  - [x] Rename of `jcan_python` to just `jcan`
  - [x] Usage examples for C++ and Python
+ - [x] PyPi package release
  - [x] Benchmark and speedtest against `python-can` (see `utils/speedtest.sh`, typically speedup is *200%* with `jcan`)
  - [ ] Build an example of JCAN + ROS2 Foxy usage
  - [x] Receive function for specific CAN IDs (e.g `receive_with_id(id : u32)`)
@@ -18,8 +19,14 @@ An easy-to-use SocketCAN library for Python and C++, built in Rust, using [cxx-r
  - [ ] TOML-based 'CAN device interface' files, which generate methods like `set_motor_speed(0.5f)` / `set_heater(True)`, etc...
 
 ## Installation
-**Download the latest builds from the [Releases Page](https://github.com/leighleighleigh/JCAN/releases)! <br>**
-Add them to your include path for C++ projects, and install the wheel using `pip` for your Python projects!
+*Download the latest builds from the [Releases Page](https://github.com/leighleighleigh/JCAN/releases)! <br>*
+
+For python, it's as easy as...
+```bash
+pip install jcan
+```
+
+For C++, you'll need to download the latest build and add it to your include path manually - check the examples folder for `cmake` usage.
 
 ## Examples
 > For local development, you can setup a *virtual CAN interface* with the [vcan.sh](https://github.com/leighleighleigh/JCAN/blob/main/utils/vcan.sh) script. <br>
