@@ -31,14 +31,30 @@ struct PyJFrame {
 impl PyJBus {
     #[new]
     fn new(interface: String) -> PyResult<Self> {
+        // Unbox the result of new_jbus, and return it
+        let bus = new_jbus(interface).map_err(|e| {
+            PyOSError::new_err(format!("Error opening bus: {}", e))
+        })?;
+
+        // bus is a Box<JBus>, so we need to dereference it
         Ok(PyJBus {
-            bus: *new_jbus(interface),
+            bus: *bus,
         })
     }
 
     // Implement the receive method for the PyJBus
     fn receive(&mut self) -> PyResult<PyJFrame> {
         let frame = self.bus.receive().map_err(|e| {
+            PyOSError::new_err(format!("Error receiving frame: {}", e))
+        })?;
+        Ok(PyJFrame {
+            frame,
+        })
+    }
+
+    // Implement the receive_with_id method for the PyJBus
+    fn receive_with_id(&mut self, id: u32) -> PyResult<PyJFrame> {
+        let frame = self.bus.receive_with_id(id).map_err(|e| {
             PyOSError::new_err(format!("Error receiving frame: {}", e))
         })?;
         Ok(PyJFrame {
@@ -72,7 +88,6 @@ impl PyJFrame {
         Ok(self.frame.to_string())
     }
 }
-
 
 #[pymodule]
 fn jcan_python(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
