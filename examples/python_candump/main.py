@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-import jorzacan
+import jcan
 
 bustype = 'socketcan'
 channel = 'vcan0'
 
-bus = jorzacan.Bus(channel)
+bus = jcan.Bus(channel)
 
 while True:
     f = bus.receive()

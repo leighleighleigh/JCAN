@@ -1,18 +1,18 @@
-# JorzaCAN
+# jCAN
 An easy-to-use SocketCAN library for Python and C++, built in Rust, using [cxx-rs](https://cxx.rs/) and [pyo3](https://pyo3.rs/).
 
 > Warning: I have never used Rust before and I don't know what I'm doing
 
 ## Feature Status / TODO
- - [x] Blocking send/receive in C++ (`jorzacan.h`) and Python (`jorzacan`)
+ - [x] Blocking send/receive in C++ (`jcan.h`) and Python (`jcan`)
  - [x] `aarch64` build for Jetson TX2
  - [ ] Convenience methods for Frame building, e.g: setting specific bits in a byte, named IDs
  - [x] Replace `maturin` build system with manual scripts, or `setuptools-rust`
- - [x] Rename of `jorzacan_python` to just `jorzacan`
+ - [x] Rename of `jcan_python` to just `jcan`
  - [x] Usage examples for C++ and Python
- - [ ] Build an example of JorzaCAN + ROS2 Foxy usage
+ - [ ] Build an example of jCAN + ROS2 Foxy usage
  - [ ] Implement asyncronous send/receive callback methods
- - [x] Benchmark and speedtest against `python-can` (see `utils/speedtest.sh`, typically speedup is *200%* with `jorzacan`)
+ - [x] Benchmark and speedtest against `python-can` (see `utils/speedtest.sh`, typically speedup is *200%* with `jcan`)
 
 ## Examples
 <details open><summary>Python</summary>
@@ -22,10 +22,10 @@ Receive a CAN frame and print it to console
 
 ```python
 #!/usr/bin/env python
-import jorzacan
+import jcan
 
 # This will raise an exception if vcan0 does not exist
-bus = jorzacan.Bus("vcan0")
+bus = jcan.Bus("vcan0")
 
 # This will block until a frame is available
 f = bus.receive()
@@ -43,14 +43,14 @@ print(str(f))
 #include <stdint.h>
 #include <stdio.h>
 #include <vector>
-#include "jorzacan.h"
+#include "jcan.h"
 
-using namespace org::jorzacan;
+using namespace org::jcan;
 
-// main function which opens a JorzaBus, creates a JorzaFrame, and sends it!
+// main function which opens a JBus, creates a JFrame, and sends it!
 int main(int argc, char **argv) {
     // Open the CAN bus, will raise an error if vcan0 is not available
-    Bus *bus = org::jorzacan::open_bus("vcan0").into_raw();
+    Bus *bus = org::jcan::open_bus("vcan0").into_raw();
 
     // Build a frame
     Frame frame;
@@ -69,18 +69,18 @@ int main(int argc, char **argv) {
     return 0;
 }
 ```
-More examples can be found [in the examples folder](https://github.com/leighleighleigh/JorzaCAN/tree/main/examples).
+More examples can be found [in the examples folder](https://github.com/leighleighleigh/jCAN/tree/main/examples).
 
 </p>
 </details>
 
 ## Installation
-Download the latest builds from the [Releases Page](https://github.com/leighleighleigh/JorzaCAN/releases), and add them to your include path or install it into your Python environment!
+Download the latest builds from the [Releases Page](https://github.com/leighleighleigh/jCAN/releases), and add them to your include path or install it into your Python environment!
 
 ## Quirks / Known Bugs
- - A dedicated `scripts-postbuild` crate is used to move all the build-artifacts (`libjorzacan.a`, `jorzacan.h`, etc...) into `/out/<profile>/<target>/jorzacan`
+ - A dedicated `scripts-postbuild` crate is used to move all the build-artifacts (`libjcan.a`, `jcan.h`, etc...) into `/out/<profile>/<target>/jcan`
  - Workspace-level `cargo build` is broken, use `build.sh` instead.
- - C++ examples must be built manually with CMake, their `include` folder is symlinked to the `/out/.../jorzacan` directory
+ - C++ examples must be built manually with CMake, their `include` folder is symlinked to the `/out/.../jcan` directory
 
 ## Development
 ```bash
@@ -88,7 +88,7 @@ Download the latest builds from the [Releases Page](https://github.com/leighleig
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 # Get code
-git clone https://github.com/leighleighleigh/JorzaCAN
+git clone https://github.com/leighleighleigh/jCAN
 
 # Setup virtual environment
 python3 -m venv .venv

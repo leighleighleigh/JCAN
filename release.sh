@@ -25,24 +25,24 @@ fi
 GIT_TAG=${GIT_TAG:1}
 
 # Copy the wheel(s) to the release directory
-cp "${SCRIPT_DIR}/out/wheels/jorzacan-${GIT_TAG}-"*.whl "${SCRIPT_DIR}/release/"
+cp "${SCRIPT_DIR}/out/wheels/jcan-${GIT_TAG}-"*.whl "${SCRIPT_DIR}/release/"
 
-# For each subdirectory of out/release/, representing a <target>/jorzacan combination
-# we will copy the jorzacan library to the release directory with the name jorzacan_<target>
+# For each subdirectory of out/release/, representing a <target>/jcan combination
+# we will copy the jcan library to the release directory with the name jcan_<target>
 for dir in "${SCRIPT_DIR}/out/release/"*;
 do
     # Get the target name from the directory name
     target_name=$(basename "${dir}")
 
-    # Copy the jorzacan library to the release directory, and zip it
+    # Copy the jcan library to the release directory, and zip it
     FROM="${dir}"
-    TO="${SCRIPT_DIR}/release/jorzacan-${GIT_TAG}-${target_name}"
+    TO="${SCRIPT_DIR}/release/jcan-${GIT_TAG}-${target_name}"
 
     # Print from/to/
     echo "Copying ${FROM} to ${TO}"
 
     # Zip the files contained within `FROM` into `TO.zip`,
-    # keeping the 'jorzacan' folder inside.
+    # keeping the 'jcan' folder inside.
     # This requires moving to the FROM directory
     pushd "${FROM}" > /dev/null
     # Zip
