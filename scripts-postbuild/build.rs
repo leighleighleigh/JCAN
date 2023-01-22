@@ -40,11 +40,6 @@ fn main() {
     let out_dir = Path::new(&manifest_dir).join("out");
     println!("cargo:warning=project_out_dir: {}", out_dir.display());
 
-    // Remove the out directory, if it exists
-    if out_dir.exists() {
-        fs::remove_dir_all(&out_dir).unwrap();
-    }
-
     let out_dir = Path::new(&manifest_dir).join("out").join(&profile).join(&target).join("jcan");
     println!("cargo:warning=out_dir: {}", out_dir.display());
 
