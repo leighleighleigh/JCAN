@@ -27,11 +27,6 @@ fn main() {
     let target = env::var("TARGET").unwrap();
     println!("cargo:warning=target: {}", target);
 
-    // Set an 'iscrossbuild' variable, which is true if TARGET != HOST
-    let host = env::var("HOST").unwrap();
-    let iscrossbuild = if target == host { "false" } else { "true" };
-    println!("cargo:warning=iscrossbuild: {}", iscrossbuild);
-
     let profile = env::var("PROFILE").unwrap();
     println!("cargo:warning=profile: {}", profile);
 
@@ -48,7 +43,7 @@ fn main() {
     // If iscrossbuild, another 'target' subdir is added
     let lib_build_path = Path::new(&manifest_dir)
         .join("target")
-        .join(if iscrossbuild == "true" { &target } else { "" })
+        .join(target)
         .join(profile)
         .join("libjorzacan.a");
 

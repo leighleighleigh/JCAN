@@ -7,7 +7,7 @@ publish = false
 [lib]
 name = "jorzacan_python"
 path = "src/lib.rs"
-crate-type = ["cdylib"]
+crate-type = ["cdylib","rlib"]
 
 [dependencies]
 anyhow = "1.0"

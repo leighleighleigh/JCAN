@@ -13,33 +13,55 @@ fi
 
 # Installs build tools just incase they arent
 #cargo install cross --git https://github.com/cross-rs/cross
-#sudo apt install podman
+# sudo apt install podman
 
-# Very important to clean, incase old crates for x86 are present
-cargo clean
+# This function takes a TARGET as an argument, and builds the library for that target
+# It then moves the build artifacts to out/<profile>/<target>/jorzacan/
+function build_target {
+    CROSSTARGET="${1}"
+    export CROSS_CONTAINER_ENGINE=podman
 
-export CROSS_CONTAINER_ENGINE=docker
+    # Very important to clean, incase old crates for x86 are present
+    cargo clean
 
-CROSSTARGET="aarch64-unknown-linux-gnu"
+    cross build --package jorzacan --target $CROSSTARGET --release
+    cross build --package scripts_postbuild --target $CROSSTARGET --release
 
-cross build --package jorzacan --target $CROSSTARGET --release
-cross build --package scripts_postbuild --target $CROSSTARGET --release
+    # python build uses a special pyo3 image
+    export CARGO=cross
+    export CARGO_BUILD_TARGET=${CROSSTARGET}
+    export CROSS_CONFIG=${SCRIPT_DIR}/jorzacan-python/Cross.toml
 
-# python build uses a special pyo3 image
-export CARGO=cross
-export CARGO_BUILD_TARGET=${CROSSTARGET}
-export CROSS_CONFIG=${SCRIPT_DIR}/jorzacan-python/Cross.toml
+    cross build --package jorzacan_python --target $CROSSTARGET --release
 
-cross build --package jorzacan_python --target $CROSSTARGET --release
+    # Run setuptools-rust on jorzacan_python
+    cd jorzacan-python
+    rm -rf ./dist
+    rm -rf ./build
 
-# Run setuptools-rust on jorzacan_python
-cd jorzacan-python
-rm -rf ./dist
-rm -rf ./build
+    # Change plat-name depending on CROSSTARGET
+    if [[ "${CROSSTARGET}" == "aarch64-unknown-linux-gnu" ]];
+    then
+        PLATNAME="manylinux2014_aarch64"
+    elif [[ "${CROSSTARGET}" == "x86_64-unknown-linux-gnu" ]];
+    then
+        PLATNAME="manylinux2014_x86_64"
+    else
+        echo "Unknown CROSSTARGET: ${CROSSTARGET}"
+        exit 1
+    fi    
 
-python setup.py bdist_wheel --plat-name manylinux2014_aarch64 --py-limited-api=cp38
-cd ..
+    python setup.py bdist_wheel --plat-name $PLATNAME --py-limited-api=cp38
 
-# Copy wheels to out folder
-mkdir -p out/wheels
-cp -r jorzacan-python/dist/* out/wheels/
+    cd ..
+
+    # Copy the resulting wheels to out folder
+    mkdir -p out/wheels
+    cp -r jorzacan-python/dist/* out/wheels/
+}
+
+# Build for aarch64
+build_target "aarch64-unknown-linux-gnu"
+
+# Build for x86_64
+build_target "x86_64-unknown-linux-gnu"

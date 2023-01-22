@@ -25,7 +25,7 @@ fi
 GIT_TAG=${GIT_TAG:1}
 
 # Copy the wheel(s) to the release directory
-cp "${SCRIPT_DIR}/out/wheels/jorzacan_python-${GIT_TAG}-"*.whl "${SCRIPT_DIR}/release/"
+cp "${SCRIPT_DIR}/out/wheels/jorzacan-${GIT_TAG}-"*.whl "${SCRIPT_DIR}/release/"
 
 # For each subdirectory of out/release/, representing a <target>/jorzacan combination
 # we will copy the jorzacan library to the release directory with the name jorzacan_<target>
