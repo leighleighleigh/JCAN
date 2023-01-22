@@ -15,7 +15,7 @@ An easy-to-use SocketCAN library for Python and C++, built in Rust, using [cxx-r
  - [x] Benchmark and speedtest against `python-can` (see `utils/speedtest.sh`, typically speedup is *200%* with `jorzacan`)
 
 ## Examples
-<details><summary>Python</summary>
+<details open><summary>Python</summary>
 <p>
 
 Receive a CAN frame and print it to console
@@ -36,7 +36,7 @@ print(str(f))
 </p>
 </details>
 
-<details><summary>C++14</summary>
+<details open><summary>C++14</summary>
 <p>
 
 ```cpp
@@ -69,6 +69,7 @@ int main(int argc, char **argv) {
     return 0;
 }
 ```
+More examples can be found [in the examples folder](https://github.com/leighleighleigh/JorzaCAN/tree/main/examples).
 
 </p>
 </details>
