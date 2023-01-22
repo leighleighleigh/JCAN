@@ -4,10 +4,15 @@ project(cpp_receive_id_filter_nonblocking)
 # ROS Foxy / Ubuntu 20 targets C++14
 set(CMAKE_CXX_STANDARD 14)
 
-set(JCAN_BRIDGE_CPP ${CMAKE_SOURCE_DIR}/include/jcan/jcan.cc)
+set(JCAN_CPP ${CMAKE_SOURCE_DIR}/include/jcan/jcan.cc)
 set(JCAN_LIB ${CMAKE_SOURCE_DIR}/include/jcan/${CMAKE_STATIC_LIBRARY_PREFIX}jcan${CMAKE_STATIC_LIBRARY_SUFFIX})
 
-add_executable(cpp_receive_id_filter_nonblocking src/main.cpp ${JCAN_BRIDGE_CPP})
+if (NOT TARGET jcan)
+  add_library(jcan ${JCAN_CPP})
+  target_link_libraries(jcan ${JCAN_LIB})
+endif()
+
+add_executable(cpp_receive_id_filter_nonblocking src/main.cpp)
 
 target_include_directories(
         cpp_receive_id_filter_nonblocking
@@ -16,7 +21,7 @@ target_include_directories(
         ${CMAKE_SOURCE_DIR}/include/jcan/
 )
 
-target_link_libraries(cpp_receive_id_filter_nonblocking ${JCAN_LIB})
+target_link_libraries(cpp_receive_id_filter_nonblocking jcan)
 
 # Windows-only configuration
 if(WIN32)
