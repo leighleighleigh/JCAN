@@ -12,8 +12,22 @@ then
 fi
 
 # Installs build tools just incase they arent
-#cargo install cross --git https://github.com/cross-rs/cross
-# sudo apt install podman
+
+# Check for 'cross' command, else prompt install
+if ! command -v cross &> /dev/null
+then
+    echo "cross could not be found, please install with:"
+    echo "cargo install cross --git https://github.com/cross-rs/cross"
+    exit 1
+fi
+
+# Check for 'podman' command, else prompt install
+if ! command -v podman &> /dev/null
+then
+    echo "podman could not be found, please install with:"
+    echo "sudo apt install podman"
+    exit 1
+fi
 
 # This function takes a TARGET as an argument, and builds the library for that target
 # It then moves the build artifacts to out/<profile>/<target>/jorzacan/
