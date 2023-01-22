@@ -18,6 +18,9 @@ An easy-to-use SocketCAN library for Python and C++, built in Rust, using [cxx-r
  
 
 ## Examples
+> NOTE: For local development, you can setup a *virtual CAN interface* with the [vcan.sh](https://github.com/leighleighleigh/JCAN/blob/main/utils/vcan.sh) script. <br>
+> You can then use the `can-utils` package (`apt install can-utils`) to interact with the `vcan0` interface, on the command line.
+
 <details open><summary>Python</summary>
 <p>
 
@@ -31,6 +34,7 @@ import jcan
 bus = jcan.Bus("vcan0")
 
 # This will block until a frame is available
+# On another terminal, try sending one with `cansend vcan0 123#0A1B2C3D`
 f = bus.receive()
 
 print(str(f))
@@ -68,6 +72,8 @@ int main(int argc, char **argv) {
 
     // Send it!
     bus->send(frame);
+    
+    // Open another terminal and type `candump vcan0`, then run this program again!
 
     return 0;
 }
@@ -87,22 +93,18 @@ Download the latest builds from the [Releases Page](https://github.com/leighleig
 
 ## Development
 ```bash
-# Install rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-
 # Get code
 git clone https://github.com/leighleighleigh/JCAN
 
-# Setup virtual environment
-python3 -m venv .venv
+# Setup the build environment, which
+# - Installs rust 
+# - Installs cross-rs
+# - Installs podman
+# - Sets up a python virtual environment in the repo, under .venv
+./devsetup.sh
 
-# Activate environment and install requirements 
-source .venv/bin/activate
-pip install -r requirements.txt
-
-## Cross-build scripts
+## Run the build scripts!
 # (This will automatically source .venv/bin/activate if needed)
-# (Make sure to follow the prompts to install podman and cross-rs)
 
 ./clean.sh
 ./crossbuild.sh
