@@ -32,6 +32,14 @@ export CROSS_CONFIG=${SCRIPT_DIR}/jorzacan-python/Cross.toml
 
 cross build --package jorzacan_python --target $CROSSTARGET --release
 
-# Packages the libjorzacan_python.so file from the build above, into a python wheel
-# Copy the wheel to out/wheels/
-#cp -r target/wheels out/
+# Run setuptools-rust on jorzacan_python
+cd jorzacan-python
+rm -rf ./dist
+rm -rf ./build
+
+python setup.py bdist_wheel --plat-name manylinux2014_aarch64 --py-limited-api=cp38
+cd ..
+
+# Copy wheels to out folder
+mkdir -p out/wheels
+cp -r jorzacan-python/dist/* out/wheels/

@@ -13,6 +13,7 @@ setup(
             path="Cargo.toml",
             binding=Binding.PyO3,
             debug=False,
+            py_limited_api=True
         )
     ],
 )
