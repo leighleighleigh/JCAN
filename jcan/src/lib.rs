@@ -14,17 +14,13 @@ pub mod ffi {
         data: Vec<u8>,
     }
 
-    #[derive(Debug)]
-    pub struct JError {
-        message: String,
-    }
-
     extern "Rust" {
         #[cxx_name = "Bus"]
         type JBus;
         #[cxx_name = "open_bus"]
-        fn new_jbus(interface: String) -> Box<JBus>;
+        fn new_jbus(interface: String) -> Result<Box<JBus>>;
         fn receive(self: &mut JBus) -> Result<JFrame>;
+        fn receive_with_id(self: &mut JBus, id: u32) -> Result<JFrame>;
         fn send(self: &mut JBus, frame: JFrame) -> Result<()>;
         fn new_jframe(id: u32, data: Vec<u8>) -> Result<JFrame>;
         fn to_string(self: &JFrame) -> String;
@@ -55,6 +51,16 @@ impl JBus {
         };
         Ok(frame)
     }
+    
+    // Keeps receiving frames, returning the first frame with the given id
+    pub fn receive_with_id(&mut self, id: u32) -> Result<ffi::JFrame, std::io::Error> {
+        loop {
+            let frame = self.receive()?;
+            if frame.id == id {
+                return Ok(frame);
+            }
+        }
+    }
 
     // Blocks until a frame is sent
     pub fn send(&mut self, frame: ffi::JFrame) -> Result<(), std::io::Error> {
@@ -77,25 +83,30 @@ impl JBus {
     }
 }
 
-// Implement Display for JError
-impl std::fmt::Display for ffi::JError {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", self.message)
-    }
-}
 
 // Public 'builder' method used to create C++ instances of the opaque JBus type
-pub fn new_jbus(interface: String) -> Box<JBus> {
-    // If an error is caught here, it will be propagated to the C++ side
-    // as a std::runtime_error, with the message "CanSocketOpenError"
-    // TODO: Make this fail gracefully on C++
-    let socket = CanSocket::open(&interface).expect("CanSocketOpenError");
-    Box::new(JBus { socket })
+pub fn new_jbus(interface: String) -> Result<Box<JBus>, std::io::Error> {
+    // Open and map to Error if it fails
+    let socket = CanSocket::open(&interface).map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+    Ok(Box::new(JBus {
+        socket,
+    }))
 }
 
 // Builder for jframe, used to create C++ instances of the opaque JFrame type
 // Takes in a u32 id, and a Vec<u8> data
 pub fn new_jframe(id: u32, data: Vec<u8>) -> Result<ffi::JFrame, std::io::Error> {
+    // Check if data is empty (zero length)
+    if data.len() == 0 {
+        // Print error message that shows N = 0 bytes
+        return Err(std::io::Error::new(std::io::ErrorKind::Other, "Data length cannot be 0 bytes"));
+    }
+
+    // Check if data is too long
+    if data.len() > 8 {
+        // Print error message that shows N > 8 bytes
+        return Err(std::io::Error::new(std::io::ErrorKind::Other, format!("Data length {} > 8 bytes", data.len())));
+    }
     Ok(ffi::JFrame {
         id,
         data,

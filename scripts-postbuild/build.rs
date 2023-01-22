@@ -23,7 +23,7 @@ fn main() {
     //    - jcan.cc
     //    - cxx.h
     // This directry can then easily be include-ed in C++ projects
-    
+
     let target = env::var("TARGET").unwrap();
     println!("cargo:warning=target: {}", target);
 
@@ -35,6 +35,10 @@ fn main() {
 
     // We will be targeting the 'jcan' subdirectory - this is hard-coded.
     let manifest_dir = project_dir;
+
+    // Delete the project-level out directory
+    let out_dir = Path::new(&manifest_dir).join("out");
+    println!("cargo:warning=project_out_dir: {}", out_dir.display());
 
     let out_dir = Path::new(&manifest_dir).join("out").join(&profile).join(&target).join("jcan");
     println!("cargo:warning=out_dir: {}", out_dir.display());

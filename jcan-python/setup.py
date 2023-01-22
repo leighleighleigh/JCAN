@@ -4,7 +4,7 @@ from setuptools_rust import Binding, RustExtension
 
 setup(
     name="jcan",
-    version="0.1.2",
+    version="0.1.3",
     packages=["jcan"],
     zip_safe=False,
     rust_extensions=[
@@ -16,4 +16,11 @@ setup(
         )
     ],
     include_package_data=True,
+    # Requirements
+    install_requires=[
+        "setuptools-rust",
+    ],
+    setup_requires=[
+        "setuptools-rust",
+    ],
 )

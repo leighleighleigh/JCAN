@@ -19,8 +19,14 @@ Cargo.lock
 **/*.rs.bk
 
 # .envrc direnv, we don't want to git-track the virtual env
-.direnv/**
-.venv/**
+**.direnv/**
+**.venv/**
+**.nox/**
 
 # Ignore .vscode folder
 .vscode/**
+
+# Ignore pycache
+**/__pycache__/**
+
+
