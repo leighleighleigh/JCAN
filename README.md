@@ -1,4 +1,4 @@
-# jCAN
+# JCAN
 An easy-to-use SocketCAN library for Python and C++, built in Rust, using [cxx-rs](https://cxx.rs/) and [pyo3](https://pyo3.rs/).
 
 > Warning: I have never used Rust before and I don't know what I'm doing
@@ -10,7 +10,7 @@ An easy-to-use SocketCAN library for Python and C++, built in Rust, using [cxx-r
  - [x] Replace `maturin` build system with manual scripts, or `setuptools-rust`
  - [x] Rename of `jcan_python` to just `jcan`
  - [x] Usage examples for C++ and Python
- - [ ] Build an example of jCAN + ROS2 Foxy usage
+ - [ ] Build an example of JCAN + ROS2 Foxy usage
  - [ ] Implement asyncronous send/receive callback methods
  - [x] Benchmark and speedtest against `python-can` (see `utils/speedtest.sh`, typically speedup is *200%* with `jcan`)
 
@@ -69,13 +69,13 @@ int main(int argc, char **argv) {
     return 0;
 }
 ```
-More examples can be found [in the examples folder](https://github.com/leighleighleigh/jCAN/tree/main/examples).
+More examples can be found [in the examples folder](https://github.com/leighleighleigh/JCAN/tree/main/examples).
 
 </p>
 </details>
 
 ## Installation
-Download the latest builds from the [Releases Page](https://github.com/leighleighleigh/jCAN/releases), and add them to your include path or install it into your Python environment!
+Download the latest builds from the [Releases Page](https://github.com/leighleighleigh/JCAN/releases), and add them to your include path or install it into your Python environment!
 
 ## Quirks / Known Bugs
  - A dedicated `scripts-postbuild` crate is used to move all the build-artifacts (`libjcan.a`, `jcan.h`, etc...) into `/out/<profile>/<target>/jcan`
@@ -88,7 +88,7 @@ Download the latest builds from the [Releases Page](https://github.com/leighleig
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 # Get code
-git clone https://github.com/leighleighleigh/jCAN
+git clone https://github.com/leighleighleigh/JCAN
 
 # Setup virtual environment
 python3 -m venv .venv
