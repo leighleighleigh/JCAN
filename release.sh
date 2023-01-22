@@ -12,7 +12,7 @@ rm -rf "${SCRIPT_DIR}/release"
 mkdir "${SCRIPT_DIR}/release"
 
 # Get the current git tag
-GIT_TAG=$(git describe --tags)
+GIT_TAG=$(git tag)
 
 # If the current git tag is not a release tag, exit
 if [[ "${GIT_TAG}" != "v"* ]];
