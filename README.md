@@ -6,13 +6,16 @@ An easy-to-use SocketCAN library for Python and C++, built in Rust, using [cxx-r
 ## Feature Status / TODO
  - [x] Blocking send/receive in C++ (`jcan.h`) and Python (`jcan`)
  - [x] `aarch64` build for Jetson TX2
- - [ ] Convenience methods for Frame building, e.g: setting specific bits in a byte, named IDs
  - [x] Replace `maturin` build system with manual scripts, or `setuptools-rust`
  - [x] Rename of `jcan_python` to just `jcan`
  - [x] Usage examples for C++ and Python
- - [ ] Build an example of JCAN + ROS2 Foxy usage
- - [ ] Implement asyncronous send/receive callback methods
  - [x] Benchmark and speedtest against `python-can` (see `utils/speedtest.sh`, typically speedup is *200%* with `jcan`)
+ - [ ] Build an example of JCAN + ROS2 Foxy usage
+ - [ ] Receive function for specific CAN IDs (e.g `receive_filtered(id : u32)`)
+ - [ ] Implement asyncronous send/receive callback methods 
+ - [ ] Convenience methods for Frame building, e.g: setting specific bits in a byte, named IDs
+ - [ ] TOML-based 'CAN device interface' files, which generate methods like `set_motor_speed(0.5f)` / `set_heater(True)`, etc...
+ 
 
 ## Examples
 <details open><summary>Python</summary>
