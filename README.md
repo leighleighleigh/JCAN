@@ -18,7 +18,7 @@ An easy-to-use SocketCAN library for Python and C++, built in Rust, using [cxx-r
  - [ ] TOML-based 'CAN device interface' files, which generate methods like `set_motor_speed(0.5f)` / `set_heater(True)`, etc...
 
 ## Installation
-Download the latest builds from the [Releases Page](https://github.com/leighleighleigh/JCAN/releases)! <br>
+**Download the latest builds from the [Releases Page](https://github.com/leighleighleigh/JCAN/releases)! <br>**
 Add them to your include path for C++ projects, and install the wheel using `pip` for your Python projects!
 
 ## Examples
@@ -78,7 +78,7 @@ while True:
 
 C++ example showing Frame building and sending.
 
-<details><summary>C++14</summary>
+<details open><summary>C++14</summary>
 <p>
 
 ```cpp
