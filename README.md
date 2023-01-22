@@ -4,7 +4,7 @@ An easy-to-use SocketCAN library for Python and C++, built in Rust, using [cxx-r
 > Warning: I have never used Rust before and I don't know what I'm doing
 
 ## Feature Status / TODO
- - [x] Blocking send/receive in C++ (`jorzacan.h`) and Python (`jorzacan_python`)
+ - [x] Blocking send/receive in C++ (`jorzacan.h`) and Python (`jorzacan`)
  - [x] `aarch64` build for Jetson TX2
  - [ ] Convenience methods for Frame building, e.g: setting specific bits in a byte, named IDs
  - [x] Replace `maturin` build system with manual scripts, or `setuptools-rust`
