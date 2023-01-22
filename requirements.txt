@@ -1,4 +1,4 @@
-jorzacan @ file:///home/leigh/GitHub/JorzaCAN/release/jorzacan-0.1.0-cp38-abi3-manylinux2014_x86_64.whl
+jcan @ file:///home/leigh/GitHub/jCAN/release/jcan-0.1.0-cp38-abi3-manylinux2014_x86_64.whl
 msgpack==1.0.4
 packaging==23.0
 patchelf==0.17.2.0

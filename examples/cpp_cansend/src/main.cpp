@@ -1,18 +1,18 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <vector>
-#include "jorzacan.h"
+#include "jcan.h"
 
-using namespace org::jorzacan;
+using namespace org::jcan;
 
 /* 
-C++-14 example of using the jorzacan library.
+C++-14 example of using the jcan library.
 */
 
-// main function which opens a JorzaBus, creates a JorzaFrame, and sends it!
+// main function which opens a JBus, creates a JFrame, and sends it!
 int main(int argc, char **argv) {
     // Open the CAN bus
-    Bus *bus = org::jorzacan::open_bus("vcan0").into_raw();
+    Bus *bus = org::jcan::open_bus("vcan0").into_raw();
 
     // Run forever
     while (1) {
