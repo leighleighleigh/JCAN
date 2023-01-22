@@ -62,10 +62,40 @@ impl PyJBus {
         })
     }
 
+    // Implement receive_any, which returns a list of frames
+    fn receive_nonblocking(&mut self) -> PyResult<Vec<PyJFrame>> {
+        let frames = self.bus.receive_nonblocking().map_err(|e| {
+            PyOSError::new_err(format!("Error receiving frames: {}", e))
+        })?;
+        let mut py_frames = Vec::new();
+        for frame in frames {
+            py_frames.push(PyJFrame {
+                frame,
+            });
+        }
+        Ok(py_frames)
+    }
+
     // Implement the send method for the PyJBus
     fn send(&mut self, frame: PyJFrame) -> PyResult<()> {
         self.bus.send(frame.frame).map_err(|e| {
             PyOSError::new_err(format!("Error sending frame: {}", e))
+        })?;
+        Ok(())
+    }
+
+    // Implement set_id_filter for the PyJBus, which takes a list of IDs
+    fn set_id_filter(&mut self, ids: Vec<u32>) -> PyResult<()> {
+        self.bus.set_id_filter(ids).map_err(|e| {
+            PyOSError::new_err(format!("Error setting ID filter: {}", e))
+        })?;
+        Ok(())
+    }
+
+    // Implement clear_id_filter, which takes no arguments
+    fn clear_id_filter(&mut self) -> PyResult<()> {
+        self.bus.clear_id_filter().map_err(|e| {
+            PyOSError::new_err(format!("Error clearing ID filter: {}", e))
         })?;
         Ok(())
     }

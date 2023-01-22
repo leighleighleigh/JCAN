@@ -1,8 +1,12 @@
 extern crate socketcan;
 
 use embedded_can::{Frame as EmbeddedFrame, Id, StandardId, ExtendedId};
-use socketcan::{CanFrame, CanSocket, Socket};
-
+use socketcan::{CanFrame, CanSocket, Socket, CanFilter};
+use std::sync::mpsc;
+use std::thread;
+use std::time::Duration;
+use std::cell::RefCell;
+use std::rc::{Rc, Weak};
 
 #[cxx::bridge(namespace = "org::jcan")]
 pub mod ffi {
@@ -24,6 +28,9 @@ pub mod ffi {
         fn send(self: &mut JBus, frame: JFrame) -> Result<()>;
         fn new_jframe(id: u32, data: Vec<u8>) -> Result<JFrame>;
         fn to_string(self: &JFrame) -> String;
+        fn set_id_filter(self: &mut JBus, allowed: Vec<u32>) -> Result<()>;
+        fn clear_id_filter(self: &mut JBus) -> Result<()>;
+        fn receive_nonblocking(self: &mut JBus) -> Result<Vec<JFrame>>;
     }
 
     unsafe extern "C++" {
@@ -36,23 +43,15 @@ pub struct JBus {
 
 // Implements JBus methods
 impl JBus {
-
     // Blocks until a frame is received
     pub fn receive(&mut self) -> Result<ffi::JFrame, std::io::Error> {
         let frame = self.socket.read_frame()?;
-        // Convert the embedded_can::Frame to a JFrame
-        let frame = ffi::JFrame {
-            // Need to map Id to Extended or Standard, then convert to u32 using as_raw()
-            id: match frame.id() {
-                Id::Standard(id) => id.as_raw().into(),
-                Id::Extended(id) => id.as_raw(),
-            },
-            data: frame.data().to_vec(),
-        };
+        // Convert the CanFrame to a JFrame using into
+        let frame: ffi::JFrame = frame.into();
         Ok(frame)
     }
     
-    // Keeps receiving frames, returning the first frame with the given id
+    // Unlike bus.set_filter, this method operates on a single ID, and doesn't prevent other IDs from being received
     pub fn receive_with_id(&mut self, id: u32) -> Result<ffi::JFrame, std::io::Error> {
         loop {
             let frame = self.receive()?;
@@ -62,25 +61,70 @@ impl JBus {
         }
     }
 
+    // Non-blocking receive, returns a vector of frames, if any are available!
+    pub fn receive_nonblocking(&mut self) -> Result<Vec<ffi::JFrame>, std::io::Error> {
+        // Set self to non-blocking
+        self.socket.set_nonblocking(true)?;
+        // Create a vector to store frames
+        let mut frames = Vec::new();
+        // Loop until we get an error
+        loop {
+            match self.receive() {
+                Ok(frame) => frames.push(frame),
+                Err(e) => {
+                    // If the error is a WouldBlock, we're done
+                    if e.kind() == std::io::ErrorKind::WouldBlock {
+                        break;
+                    }
+                    // Otherwise, return the error
+                    return Err(e);
+                }
+            }
+        }
+        // Set self back to blocking
+        self.socket.set_nonblocking(false)?;
+        // Return the vector of frames
+        Ok(frames)
+    }
+
     // Blocks until a frame is sent
     pub fn send(&mut self, frame: ffi::JFrame) -> Result<(), std::io::Error> {
-        // First check if id needs to be Standard or Extended
-        let id = if frame.id > 0x7FF {
-            Id::Extended(ExtendedId::new(frame.id).unwrap())
-        } else {
-            Id::Standard(StandardId::new(frame.id as u16).unwrap())
-        };
-
-        // Convert the JFrame to a CanFrame
-        let frame = CanFrame::new(
-            id,
-            frame.data.as_slice(),
-        ).unwrap();
-
+        // Convert frame into CanFrame
+        let frame: CanFrame = frame.into(); 
         // Send it!
         self.socket.write_frame(&frame)?;
         Ok(())
     }
+
+    // Set the list of IDs that will be received
+    // This filter guarantees that all the ALLOWED frames will be received
+    pub fn set_id_filter(&mut self, allowed: Vec<u32>) -> Result<(), std::io::Error> {
+        // Create a vector of CanFilters
+        let mut filters = Vec::new();
+        // Loop through the allowed IDs
+        for id in allowed {
+            // Create a CanFilter for each ID, for STANDARD IDs only.
+            let filter = CanFilter::new(id, 0x7FF);
+            // Push it to the vector
+            filters.push(filter);
+        }
+        // Disable the default filter
+        self.socket.filter_drop_all()?;
+        // Set the filter
+        self.socket.set_filters(&filters)?;
+        // Set the filter
+        Ok(())
+    }
+
+    // Clear the list of IDs that will be received
+    // This means ALL frames will be received
+    pub fn clear_id_filter(&mut self) -> Result<(), std::io::Error> {
+        // Disable the default filter
+        self.socket.filter_accept_all()?;
+        // Set the filter
+        Ok(())
+    }
+
 }
 
 
@@ -122,5 +166,36 @@ impl ffi::JFrame {
             s.push_str(&format!("{:X} ", byte));
         }
         s
+    }
+}
+
+// Implement From<CanFrame> for ffi::JFrame
+impl From<CanFrame> for ffi::JFrame {
+    fn from(frame: CanFrame) -> Self {
+        ffi::JFrame {
+            id: match frame.id() {
+                Id::Standard(id) => id.as_raw().into(),
+                Id::Extended(id) => id.as_raw(),
+            },
+            data: frame.data().to_vec(),
+        }
+    }
+}
+
+// Implement Into<CanFrame> for ffi::JFrame
+impl Into<CanFrame> for ffi::JFrame {
+    fn into(self) -> CanFrame {
+        // First check if id needs to be Standard or Extended
+        let id = if self.id > 0x7FF {
+            Id::Extended(ExtendedId::new(self.id).unwrap())
+        } else {
+            Id::Standard(StandardId::new(self.id as u16).unwrap())
+        };
+
+        // Convert the JFrame to a CanFrame
+        CanFrame::new(
+            id,
+            self.data.as_slice(),
+        ).unwrap()
     }
 }
