@@ -4,7 +4,7 @@ from setuptools_rust import Binding, RustExtension
 
 setup(
     name="jorzacan",
-    version="0.1.0",
+    version="0.1.1",
     packages=["jorzacan"],
     zip_safe=False,
     rust_extensions=[
