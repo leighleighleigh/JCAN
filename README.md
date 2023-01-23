@@ -11,7 +11,7 @@ An easy-to-use SocketCAN library for Python and C++, built in Rust, using [cxx-r
  - [x] Usage examples for C++ and Python
  - [x] PyPi package release
  - [x] Benchmark and speedtest against `python-can` (see `utils/speedtest.sh`, typically speedup is *200%* with `jcan`)
- - [ ] Build an example of JCAN + ROS2 Foxy usage
+ - [x] Build an example of JCAN + ROS2 Foxy usage
  - [x] Receive function for specific CAN IDs (e.g `receive_with_id(id : u32)`)
  - [x] Non-blocking receive functions, which return a list of buffered Frames
  - [ ] Implement asyncronous send/receive callback methods 
