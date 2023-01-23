@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.10)
 project(cpp_receive_id_filter_nonblocking)
 
 # ROS Foxy / Ubuntu 20 targets C++14
@@ -25,7 +25,7 @@ target_link_libraries(cpp_receive_id_filter_nonblocking jcan)
 
 # Windows-only configuration
 if(WIN32)
-    target_link_libraries(cpp_receive_id_filter_nonblocking userenv ws2_32 bcrypt)
+    target_link_libraries(cpp_receive_id_filter_nonblocking userenv ws2_32 bcrypt jcan)
     set_target_properties(
             cpp_receive_id_filter_nonblocking
             PROPERTIES
