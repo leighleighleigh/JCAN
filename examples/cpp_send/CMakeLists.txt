@@ -7,9 +7,11 @@ set(CMAKE_CXX_STANDARD 14)
 set(JCAN_CPP ${CMAKE_SOURCE_DIR}/include/jcan/jcan.cc)
 set(JCAN_LIB ${CMAKE_SOURCE_DIR}/include/jcan/${CMAKE_STATIC_LIBRARY_PREFIX}jcan${CMAKE_STATIC_LIBRARY_SUFFIX})
 
+find_package (Threads REQUIRED)
+
 if (NOT TARGET jcan)
   add_library(jcan ${JCAN_CPP})
-  target_link_libraries(jcan ${JCAN_LIB})
+  target_link_libraries(jcan ${JCAN_LIB} pthread dl rt)
 endif()
 
 add_executable(cpp_send src/main.cpp)
