@@ -1,12 +1,12 @@
 extern crate socketcan;
 
+use cxx::private::UniquePtrTarget;
 use embedded_can::{Frame as EmbeddedFrame, Id, StandardId, ExtendedId};
 use socketcan::{CanFrame, CanSocket, Socket, CanFilter};
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
-use std::cell::RefCell;
-use std::rc::{Rc, Weak};
+use cxx::UniquePtr;
 
 #[cxx::bridge(namespace = "org::jcan")]
 pub mod ffi {
@@ -17,6 +17,7 @@ pub mod ffi {
         id: u32,
         data: Vec<u8>,
     }
+
 
     extern "Rust" {
         #[cxx_name = "Bus"]
@@ -34,11 +35,31 @@ pub mod ffi {
     }
 
     unsafe extern "C++" {
+        include!("jcan/src/callback.h");
+        type JCANFrameCallback;
+        // fn new_jcanframecallback(callback: fn(JFrame)) -> UniquePtr<JCANFrameCallback>;
+        // fn execute_callback(callback: &JCANFrameCallback, frame: JFrame);
     }
 }
 
 pub struct JBus {
     socket: CanSocket,
+    // Setup a MPSC channel which is consumed by the main thread calling bus.spin()
+    // Multiple threads can send to the channel, each listening for a specific ID
+    // Having these threads sit in the background mean we don't waste CPU cycles
+    // These are optional, and are only created if the user calls bus.spin()
+    tx : Option<mpsc::Sender<(u32, ffi::JFrame)>>,
+    rx : Option<mpsc::Receiver<(u32, ffi::JFrame)>>,
+
+    // The threads are stored in a vector, so they can be joined when the bus is dropped
+    thread_handle: Vec<thread::JoinHandle<()>>,
+
+    // Callbacks functions are stored in a vector, so they can be called when a frame is received
+    // The first element of the tuple is the ID, the second is the callback function
+    // The callback function is an Opaque type, which surrounds a C++ functor. This is because we cannot
+    // directly pass function pointers from C++ to Rust, so we have to wrap them in a functor.
+    // The function signature is void(*)(Frame)
+    callbacks: Vec<(u32, ffi::JCANFrameCallback)>,
 }
 
 // Implements JBus methods
@@ -134,6 +155,9 @@ pub fn new_jbus(interface: String) -> Result<Box<JBus>, std::io::Error> {
     let socket = CanSocket::open(&interface).map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
     Ok(Box::new(JBus {
         socket,
+        tx: None,
+        rx: None,
+        thread_handle: Vec::new(),
     }))
 }
 
