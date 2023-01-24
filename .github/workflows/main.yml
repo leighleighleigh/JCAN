@@ -1,0 +1,28 @@
+name: Build Scripts Pipeline
+
+on:
+  # Manual start via. pushbutton
+  workflow_dispatch:
+#   schedule:
+#     # Runs at 1am each morning, which is 2pm UTC
+#     - cron:  '0 14 * * *'
+#   # Or, on any push to main
+#   push:
+#     branches: [ main ]
+
+jobs:
+  build-pipeline:
+    runs-on: [ubuntu-latest]
+
+    steps:
+    - name: Source checkout
+      uses: actions/checkout@v3
+      with:
+        # This fetches ALL history - important for git tags
+        fetch-depth: 0
+
+    - name: Setup environment for Rust build
+      shell: bash
+      run: |
+        cd $RUNNER_WORKSPACE
+        bash ./devsetup.sh
