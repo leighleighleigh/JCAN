@@ -39,13 +39,17 @@ pub mod ffi {
         fn open(self: &mut JBus, interface: String) -> Result<()>;
         fn is_open(self: &JBus) -> bool;
 
-        // fn spin(self: &mut JBus) -> Result<()>;
+        fn spin(self: &mut JBus) -> Result<()>;
 
         fn send(self: &mut JBus, frame: JFrame) -> Result<()>;
         fn receive(self: &mut JBus) -> Result<JFrame>;
 
         #[cxx_name = "new_frame"]
         fn new_jframe(id: u32, data: Vec<u8>) -> Result<JFrame>;
+        fn get_id(self: &JFrame) -> u32;
+        fn get_data(self: &JFrame) -> Vec<u8>;
+        fn set_id(self: &mut JFrame, id: u32) -> Result<()>;
+        fn set_data(self: &mut JFrame, data: Vec<u8>) -> Result<()>;
         fn to_string(self: &JFrame) -> String;
 
     }

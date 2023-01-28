@@ -21,7 +21,6 @@ target_include_directories(
         cpp_receive_id_filter_nonblocking
         PRIVATE
         include/
-        ${CMAKE_SOURCE_DIR}/include/jcan/
 )
 
 target_link_libraries(cpp_receive_id_filter_nonblocking jcan)
