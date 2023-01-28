@@ -31,10 +31,10 @@ pub mod ffi {
 
         fn set_id_filter(self: &mut JBus, allowed: Vec<u32>) -> Result<()>;
 
-        // Is called from C++, adding an opaque type to the vector of callbacks.
-        // This type 'FrameCallback' is a C++ functor, which is wrapped in a UniquePtr
-        fn on_receive(self: &mut JBus, callback: FrameCallback) -> Result<()>;
-        fn on_receive_id(self: &mut JBus, id: u32, callback: FrameCallback) -> Result<()>;
+        // // Is called from C++, adding an opaque type to the vector of callbacks.
+        // // This type 'FrameCallback' is a C++ functor, which is wrapped in a UniquePtr
+        // fn on_receive(self: &mut JBus, callback: FrameCallback) -> Result<()>;
+        // fn on_receive_id(self: &mut JBus, id: u32, callback: FrameCallback) -> Result<()>;
 
         fn open(self: &mut JBus, interface: String) -> Result<()>;
         fn is_open(self: &JBus) -> bool;
@@ -55,22 +55,7 @@ pub mod ffi {
     }
 
     unsafe extern "C++" {
-        include!("jcan/include/callback.h");
-        #[cxx_name = "FrameCallback"]
-        type FrameCallback = crate::FrameCallback;
-        // execute_callback is defined on the C++ side, and is called from Rust.
-        // It allows us to wrap arbitrary C++ functors inside of a FrameCallback,
-        // and call them from Rust.
-        fn execute_callback(callback: FrameCallback, frame: JFrame);
     }
-}
-
-#[repr(transparent)]
-pub struct FrameCallback(pub extern "C" fn(frame: &ffi::JFrame));
-
-unsafe impl ExternType for FrameCallback {
-    type Id = type_id!("org::jcan::FrameCallback");
-    type Kind = cxx::kind::Trivial;
 }
 
 pub struct JBus {
@@ -95,7 +80,7 @@ pub struct JBus {
     // The callback function is called from the spin thread, when a frame is received. 
     // ALL callbacks matching the ID of the frame are called, in the order they were added.
     // This is done to allow multiple callbacks to be added for the same ID.
-    callbacks: Vec<(u32, FrameCallback)>,
+    // callbacks: Vec<(u32, FrameCallback)>,
 }
 
 // Implements JBus methods
@@ -284,30 +269,30 @@ impl JBus {
         Ok(())
     }
 
-    // Registers a callback with ID 0, which will be called for all frames!
-    pub fn on_receive(&mut self, callback: FrameCallback) -> Result<(), std::io::Error> {
-        self.on_receive_id(0, callback)
-    }
+    // // Registers a callback with ID 0, which will be called for all frames!
+    // pub fn on_receive(&mut self, callback: FrameCallback) -> Result<(), std::io::Error> {
+    //     self.on_receive_id(0, callback)
+    // }
 
-    // Registers a callback with a specific ID
-    pub fn on_receive_id(
-        &mut self,
-        id: u32,
-        callback: FrameCallback,
-    ) -> Result<(), std::io::Error> {
-        // Bus must be opened AFTER registering callbacks
-        if self.is_open() {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "Bus already open, please register callbacks before opening bus",
-            ));
-        }
+    // // Registers a callback with a specific ID
+    // pub fn on_receive_id(
+    //     &mut self,
+    //     id: u32,
+    //     callback: FrameCallback,
+    // ) -> Result<(), std::io::Error> {
+    //     // Bus must be opened AFTER registering callbacks
+    //     if self.is_open() {
+    //         return Err(std::io::Error::new(
+    //             std::io::ErrorKind::Other,
+    //             "Bus already open, please register callbacks before opening bus",
+    //         ));
+    //     }
 
-        // Push it to our callbacks Vector
-        self.callbacks.push((id, callback));
+    //     // Push it to our callbacks Vector
+    //     self.callbacks.push((id, callback));
 
-        Ok(())
-    }
+    //     Ok(())
+    // }
 
     // bus.spin() is the consumer of the mpsc channel (rx), and is what calls the callbacks!
     pub fn spin(&mut self) -> Result<(), std::io::Error> {
@@ -333,18 +318,18 @@ impl JBus {
 
         // For each frame we have received, call each callback that has been registered
         for frame in frames {
-            // Call all the callbacks which have been registered for this ID
-            for callback in self.callbacks.iter() {
-                // Make a copy of the callback ID
-                let callback_id = callback.0.clone();
-                let callback_fn = &callback.1;
+            // // Call all the callbacks which have been registered for this ID
+            // for callback in self.callbacks.iter() {
+            //     // Make a copy of the callback ID
+            //     let callback_id = callback.0.clone();
+            //     let callback_fn = &callback.1;
 
-                // If the callback ID is 0, or if the callback ID matches the frame ID, call the callback
-                if callback_id == 0 || callback_id == frame.id {
-                    // Use the 'execute_callback' function (defined on the C++ side) to call the callback
-                    ffi::execute_callback(FrameCallback(callback_fn.0), frame.clone());
-                }
-            }
+            //     // If the callback ID is 0, or if the callback ID matches the frame ID, call the callback
+            //     if callback_id == 0 || callback_id == frame.id {
+            //         // Use the 'execute_callback' function (defined on the C++ side) to call the callback
+            //         // ffi::execute_callback(FrameCallback(callback_fn.0), frame.clone());
+            //     }
+            // }
         }
 
         Ok(())
@@ -357,7 +342,7 @@ pub fn new_jbus() -> Result<Box<JBus>, std::io::Error> {
     // Create a new JBus
     let jbus = JBus {
         filters: Vec::new(),
-        callbacks: Vec::new(),
+        // callbacks: Vec::new(),
         spin_handle: None,
         spin_recv_tx: None,
         spin_recv_rx: None,

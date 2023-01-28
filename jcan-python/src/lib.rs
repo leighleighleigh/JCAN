@@ -17,7 +17,6 @@ use jcan::*;
 #[pyo3{name = "Bus"}]
 struct PyJBus {
     bus: JBus,
-    // callbacks: Vec<(u32, PyFrameCallback)>,
 }
 
 #[pyclass]
@@ -27,10 +26,6 @@ struct PyJFrame {
     frame: ffi::JFrame,
 }
 
-
-// struct PyFrameCallbackManager {
-//     callbacks: Vec<(u32, cb(f: ffi::JFrame))>,
-// }
 
 // Implement the 'new' method for the PyJBus, which makes a call to new_jbus
 #[pymethods]
@@ -56,58 +51,7 @@ impl PyJBus {
         })?;
         Ok(())
     }
-
-    // // C-exported version of the pycallable_to_framecallback method
-    // // This is not turned into a pymethod
-    // #[inline]
-    // extern "C" fn _on_recv_handler_(&self, frame: &ffi::JFrame) {
-    //     // For each callback matching this frame's ID, or 0 (all IDs), call the callback
-    //     for (id, callback) in self.callbacks.iter() {
-    //         if *id == 0 || *id == frame.id {
-    //             // Convert the frame to a PyJFrame, and call the callback
-    //             let pyframe = PyJFrame {
-    //                 frame: *frame,
-    //             };
-    //             let gil = Python::with_gil(|py| {
-    //                 callback.callback.call1(py, (pyframe, )).unwrap();
-    //             });
-    //         }
-    //     }
-    // }
-
-    // // Implement the on_receive method.
-    // fn on_receive(&mut self, callback: Py<PyAny>) -> PyResult<()> {
-    //     self.on_receive_id(0, callback)
-    // }
-
-    // // Implement the on_receive_id method. 
-    // // The function signature is replaced so that it only accepts python Callable's
-    // fn on_receive_id(&mut self, id: u32, callback: Py<PyAny>) -> PyResult<()> {
-    //     // Store the callback in a vector, so that it doesn't get dropped
-    //     self.callbacks.push((id, PyFrameCallback {
-    //         callback,
-    //     }));
-
-    //     // If there's already a callback with this ID, don't make the bus call
-    //     let mut found = false;
-    //     for (cid, _) in self.callbacks.iter() {
-    //         if *cid == id {
-    //             found = true;
-    //             break;
-    //         }
-    //     }
-
-    //     if !found {
-    //         // Call the on_receive method on the JBus
-    //         self.bus.on_receive_id(id, FrameCallback(self._on_recv_handler_)).map_err(|e| {
-    //             PyOSError::new_err(format!("Error setting on_receive callback: {}", e))
-    //         })?;
-    //     }
-    //     Ok(())
-    // }
-
-
-
+    
     // Implement the receive method for the PyJBus
     fn receive(&mut self) -> PyResult<PyJFrame> {
         let frame = self.bus.receive().map_err(|e| {

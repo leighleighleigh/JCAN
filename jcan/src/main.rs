@@ -6,13 +6,13 @@ extern crate jcan;
 use jcan::{*, ffi::JFrame};
 
 
-extern "C" fn on_frame(frame: &ffi::JFrame) {
-    println!("Received frame: {}", frame);
-}
+// extern "C" fn on_frame(frame: &ffi::JFrame) {
+//     println!("Received frame: {}", frame);
+// }
 
-extern "C" fn on_special_frame(frame: &ffi::JFrame) {
-    println!("Received special frame: {}", frame);
-}
+// extern "C" fn on_special_frame(frame: &ffi::JFrame) {
+//     println!("Received special frame: {}", frame);
+// }
 
 fn main()
 {
@@ -23,8 +23,8 @@ fn main()
     let cb = FrameCallback(on_frame);
 
     // Register the callback
-    bus.on_receive(cb).expect("Failed to register callback.");
-    bus.on_receive_id(0x123, FrameCallback(on_special_frame)).expect("Failed to register callback.");
+    // bus.on_receive(cb).expect("Failed to register callback.");
+    // bus.on_receive_id(0x123, FrameCallback(on_special_frame)).expect("Failed to register callback.");
 
     // Open the bus in async mode
     bus.open("vcan0".to_string()).expect("Failed to open bus.");
