@@ -23,7 +23,7 @@ struct PyJBus {
 #[pyo3{name = "Frame"}]
 #[derive(Clone)]
 struct PyJFrame {
-    frame: JFrame,
+    frame: ffi::JFrame,
 }
 
 // Implement the 'new' method for the PyJBus, which makes a call to new_jbus
@@ -130,7 +130,9 @@ impl PyJFrame {
     // Implement the data property
     #[getter]
     fn data(&self) -> PyResult<Vec<u8>> {
-        Ok(self.frame.data)
+        // Cannot return this since Vec<u8> doesn't implent Copy
+        // Ok(self.frame.data)
+        Ok(self.frame.data.clone())
     }
 }
 
