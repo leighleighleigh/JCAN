@@ -106,16 +106,50 @@ impl PyJBus {
 impl PyJFrame {
     #[new]
     fn new(id: u32, data: Vec<u8>) -> PyResult<Self> {
-        Ok(PyJFrame {
-            frame: new_jframe(id, data).map_err(|e| {
-                PyOSError::new_err(format!("Error creating frame: {}", e))
-            })?,
-        })
+        // First build a JFrame from the id and data, using new _jframe.
+        // This method runs some data validation, so we need to use it.
+        let frame = new_jframe(id, data).map_err(|e| {
+            PyOSError::new_err(format!("Error creating frame: {}", e))
+        })?;
+
+        // Then convert JFrame to PyJFrame, using the From<> trait
+        Ok(frame.into())
     }
 
     // Implement string representation using the to_string method
     fn __str__(&self) -> PyResult<String> {
         Ok(self.frame.to_string())
+    }
+
+    // Implement the id property
+    #[getter]
+    fn id(&self) -> PyResult<u32> {
+        Ok(self.frame.id)
+    }
+
+    // Implement the data property
+    #[getter]
+    fn data(&self) -> PyResult<Vec<u8>> {
+        // Cannot return this since Vec<u8> doesn't implent Copy
+        // Ok(self.frame.data)
+        Ok(self.frame.data.clone())
+    }
+}
+
+// Implement conversion from PyJFrame to JFrame
+impl From<PyJFrame> for ffi::JFrame {
+    fn from(py_frame: PyJFrame) -> Self {
+        // Unbox the PyJFrame, and return the JFrame
+        py_frame.frame
+    }
+}
+
+// Implement conversion from JFrame to PyJFrame
+impl From<ffi::JFrame> for PyJFrame {
+    fn from(frame: ffi::JFrame) -> Self {
+        PyJFrame {
+            frame,
+        }
     }
 }
 

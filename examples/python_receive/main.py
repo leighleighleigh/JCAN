@@ -9,5 +9,6 @@ bus = jcan.Bus(channel)
 while True:
     f = bus.receive()
     print(str(f))
+    print(f.data)
 
 
