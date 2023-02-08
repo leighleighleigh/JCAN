@@ -39,7 +39,7 @@ pub mod ffi {
         fn open(self: &mut JBus, interface: String) -> Result<()>;
         fn is_open(self: &JBus) -> bool;
 
-        fn spin(self: &mut JBus) -> Result<()>;
+        fn spin_cycle(self: &mut JBus) -> Result<Vec<JFrame>>;
 
         fn send(self: &mut JBus, frame: JFrame) -> Result<()>;
         fn receive(self: &mut JBus) -> Result<JFrame>;
@@ -295,7 +295,7 @@ impl JBus {
     // }
 
     // bus.spin() is the consumer of the mpsc channel (rx), and is what calls the callbacks!
-    pub fn spin(&mut self) -> Result<(), std::io::Error> {
+    pub fn spin_cycle(&mut self) -> Result<Vec<ffi::JFrame>, std::io::Error> {
         // Check if we are open
         if !self.is_open() {
             return Err(std::io::Error::new(
@@ -317,7 +317,7 @@ impl JBus {
             .collect::<Vec<ffi::JFrame>>();
 
         // For each frame we have received, call each callback that has been registered
-        for frame in frames {
+        // for frame in frames {
             // // Call all the callbacks which have been registered for this ID
             // for callback in self.callbacks.iter() {
             //     // Make a copy of the callback ID
@@ -330,9 +330,9 @@ impl JBus {
             //         // ffi::execute_callback(FrameCallback(callback_fn.0), frame.clone());
             //     }
             // }
-        }
+        // }
 
-        Ok(())
+        Ok(frames)
     }
 }
 
@@ -405,7 +405,6 @@ impl ffi::JFrame {
         }
 
         self.data = data.clone();
-
         Ok(())
     }
 

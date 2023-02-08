@@ -10,9 +10,9 @@ use jcan::{*, ffi::JFrame};
 //     println!("Received frame: {}", frame);
 // }
 
-// extern "C" fn on_special_frame(frame: &ffi::JFrame) {
-//     println!("Received special frame: {}", frame);
-// }
+// // extern "C" fn on_special_frame(frame: &ffi::JFrame) {
+// //     println!("Received special frame: {}", frame);
+// // }
 
 fn main()
 {
@@ -20,7 +20,7 @@ fn main()
     let mut bus = new_jbus().unwrap();
 
     // Register a frame handler callback
-    let cb = FrameCallback(on_frame);
+    // let cb = FrameCallback(on_frame);
 
     // Register the callback
     // bus.on_receive(cb).expect("Failed to register callback.");
@@ -33,7 +33,12 @@ fn main()
     loop {
         // Print and wait a bit
         println!("Spinning...");
-        bus.spin().expect("Failed to spin bus.");
+        let frames = bus.spin_cycle().expect("Failed to spin bus.");
+
+        // Print received frames
+        for frame in frames {
+            println!("Received frame: {}", frame);
+        }
 
         // Build frame
         let frame = JFrame::build(0x123, [0x10,0x20].to_vec()).unwrap();

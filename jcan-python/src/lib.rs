@@ -13,10 +13,32 @@ use pyo3::{PyResult};
 
 use jcan::*;
 
+
+// fn add_to_vec<'a, T: FnMut() + 'a>(v: &mut Vec<Box<FnMut() + 'a>>, f: T) {
+//     v.push(Box::new(f));
+// }
+
+// fn call_b() {
+//     println!("Call b.");
+// }
+
+// #[test]
+// fn it_works() {
+//     let mut calls: Vec<Box<FnMut()>> = Vec::new();
+
+//     add_to_vec(&mut calls, || { println!("Call a."); });
+//     add_to_vec(&mut calls, call_b);
+
+//     for mut c in calls.drain() {
+//         c();
+//     }
+// }
+
 #[pyclass]
 #[pyo3{name = "Bus"}]
 struct PyJBus {
     bus: JBus,
+    callbacks : Vec<PyObject>,
 }
 
 #[pyclass]
@@ -40,7 +62,7 @@ impl PyJBus {
         // bus is a Box<JBus>, so we need to dereference it
         Ok(PyJBus {
             bus: *bus,
-            // callbacks: Vec::new(),
+            callbacks: Vec::new(),
         })
     }
 
@@ -75,6 +97,16 @@ impl PyJBus {
         self.bus.set_id_filter(ids).map_err(|e| {
             PyOSError::new_err(format!("Error setting ID filter: {}", e))
         })?;
+        Ok(())
+    }
+
+    // Implement the spin() method, which first calls the underlying spin_cycle to retrieve all the frames
+    // , before calling the callback functions
+    fn spin(&mut self) -> PyResult<()> {
+        let frames = self.bus.spin_cycle().map_err(|e| {
+            PyOSError::new_err(format!("Error spinning: {}", e))
+        })?;
+
         Ok(())
     }
 }
