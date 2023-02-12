@@ -4,11 +4,6 @@
 
 namespace org::jcan
 {
-   void hello()
-   {
-        printf("Hello!");
-   } 
-
    Bus::Bus() {
       this->jBus = new_jbus().into_raw();
    }
@@ -38,15 +33,30 @@ namespace org::jcan
       this->jBus->receive();
    }
 
-   // void Bus::add_callback(std::function<void(Frame)> callback) {
-   //    // this->jBus->add_callback(callback);
-   //    // TODO
-   // }
-
    std::vector<Frame> Bus::receive_many() {
       std::vector<Frame> stdv;
       auto frames = this->jBus->receive_many();
       std::copy(frames.begin(), frames.end(), std::back_inserter(stdv));
       return stdv;
    }
+
+  void Bus::add_callback(int id, void (*callback)(Frame)) {
+    this->callbacks_[id] = callback;
+  }
+
+  void Bus::spin() {
+    // Get a vector of frames from the bus (receive_many)
+    auto frames = this->receive_many();
+
+    // For each frame, call the callback function associated with the frame's ID
+    for (auto frame : frames) {
+      auto it = this->callbacks_.find(frame.id);
+      // If the ID is not in the map, do nothing
+      if (it != this->callbacks_.end())
+      {
+        // Call the callback function
+        it->second(frame);
+      }
+    }
+  }
 }

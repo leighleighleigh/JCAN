@@ -3,6 +3,8 @@
 // #include <rust/cxx.h>
 #include <memory>
 #include <vector>
+#include <map>
+#include <functional>
 
 namespace org::jcan
 {
@@ -16,13 +18,20 @@ struct Frame;
 // in a clean way.
 class JBus;
 
-void hello();
+
+// Callback functions
+typedef std::function<void(Frame)> CallbackFunction;
+// template <class T>
+// using MethodCallback = void (T::*)(Frame);
+
 
 class Bus{
 private:
-    JBus *jBus; //pointer to a JBus object
+    JBus *jBus; 
+    std::map<int, CallbackFunction> callbacks_;
 
 public:
+
   Bus();
   void open(const char *name);
   
@@ -31,8 +40,18 @@ public:
   void send(Frame frame);
   void receive();
 
-  // void add_callback(std::function<void(Frame)> callback);
   std::vector<Frame> receive_many();
+
+  void add_callback(int id, void (*callback)(Frame));
+
+  template <typename T>
+  void add_callback_to(int id, T *instance, void (T::*method)(Frame))
+  {
+    // NOTE: This MUST be defined in the header file, since it is a template method!!!
+    this->callbacks_[id] = std::bind(method, instance, std::placeholders::_1);
+  }
+
+  void spin();
 };
 
 std::unique_ptr<Bus> new_bus();

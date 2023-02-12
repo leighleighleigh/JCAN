@@ -56,7 +56,8 @@ pub mod ffi {
 
     unsafe extern "C++" {
         include!("jcan/include/callback.h");
-        fn hello() -> Result<()>;
+        type Bus;
+        // fn hello() -> Result<()>;
         // fn hello_bus() -> Result<()>;
     }
 }

@@ -6,8 +6,20 @@
 using namespace org::jcan;
 
 /* 
-C++-14 example of using the jcan library.
+C++-14 example of using the jcan library with callbacks.
 */
+
+// Example of handling a frame within a class object
+class MyFrameHandler {
+public:
+    void on_frame(Frame frame) {
+        printf("MFH Received frame: %s\n", frame.to_string().c_str());
+    }
+}; 
+
+void on_frame(Frame frame) {
+    printf("Received frame: %s\n", frame.to_string().c_str());
+}
 
 // main function which opens a JBus, and prints incoming frames
 int main(int argc, char **argv) {
@@ -15,25 +27,26 @@ int main(int argc, char **argv) {
     std::unique_ptr<Bus> bus = new_bus();
   
     // Set ID filter using a vector of allowed IDs
-    std::vector<uint32_t> allowed_ids = {0x123, 0x456, 0x789};
+    std::vector<uint32_t> allowed_ids = {0x100, 0x123, 0x456, 0x789};
     bus->set_id_filter(allowed_ids);
+
+    // Instantiate a frame handler object
+    MyFrameHandler frame_handler;
+
+    // Add a callback functions 
+    bus->add_callback(0x123, &on_frame);
+    bus->add_callback(0x456, &on_frame);
+    bus->add_callback(0x789, &on_frame);
+
+    // Add a callback function to a class object
+    bus->add_callback_to(0x100, &frame_handler, &MyFrameHandler::on_frame);
 
     // Open the bus
     bus->open("vcan0");
-    
-    // Say hello (it's only polite)
-    hello();
 
     // Run forever
     while (1) {
-        // Receve a frame
-        auto frames = bus->receive_many();
-
-        // Print frames
-        for(auto frame : frames){
-          // Print frame using it's to_string method
-          printf("%s\n", frame.to_string().c_str());
-        }
+        bus->spin();
     }
 
     return 0;
