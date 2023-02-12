@@ -33,7 +33,7 @@ fn main()
     loop {
         // Print and wait a bit
         println!("Spinning...");
-        let frames = bus.spin_cycle().expect("Failed to spin bus.");
+        let frames = bus.receive_many().expect("Failed to spin bus.");
 
         // Print received frames
         for frame in frames {

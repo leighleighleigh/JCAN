@@ -6,39 +6,22 @@
 extern crate pyo3;
 extern crate jcan;
 
-use pyo3::exceptions::{PyOSError};
+use std::collections::HashMap;
+
+use pyo3::exceptions::{PyOSError, PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyModule};
 use pyo3::{PyResult};
 
 use jcan::*;
 
-
-// fn add_to_vec<'a, T: FnMut() + 'a>(v: &mut Vec<Box<FnMut() + 'a>>, f: T) {
-//     v.push(Box::new(f));
-// }
-
-// fn call_b() {
-//     println!("Call b.");
-// }
-
-// #[test]
-// fn it_works() {
-//     let mut calls: Vec<Box<FnMut()>> = Vec::new();
-
-//     add_to_vec(&mut calls, || { println!("Call a."); });
-//     add_to_vec(&mut calls, call_b);
-
-//     for mut c in calls.drain() {
-//         c();
-//     }
-// }
-
 #[pyclass]
 #[pyo3{name = "Bus"}]
 struct PyJBus {
     bus: JBus,
-    callbacks : Vec<PyObject>,
+    // Make a HashMap of callbacks, where the u32 key 
+    // ,is the ID of the frame being handled by the callback 
+    callbacks: HashMap<u32, PyObject>,
 }
 
 #[pyclass]
@@ -53,16 +36,16 @@ struct PyJFrame {
 #[pymethods]
 impl PyJBus {
     #[new]
-    fn new(interface: String) -> PyResult<Self> {
+    fn new() -> PyResult<Self> {
         // Unbox the result of new_jbus, and return it
         let bus = new_jbus().map_err(|e| {
-            PyOSError::new_err(format!("Error opening bus: {}", e))
+            PyOSError::new_err(format!("Error creating Bus: {}", e))
         })?;
 
         // bus is a Box<JBus>, so we need to dereference it
         Ok(PyJBus {
             bus: *bus,
-            callbacks: Vec::new(),
+            callbacks: HashMap::new(),
         })
     }
 
@@ -100,13 +83,62 @@ impl PyJBus {
         Ok(())
     }
 
-    // Implement the spin() method, which first calls the underlying spin_cycle to retrieve all the frames
-    // , before calling the callback functions
-    fn spin(&mut self) -> PyResult<()> {
-        let frames = self.bus.spin_cycle().map_err(|e| {
-            PyOSError::new_err(format!("Error spinning: {}", e))
+    // Receive many will return a list of buffered frames from the receive thread
+    fn receive_many(&mut self) -> PyResult<Vec<PyJFrame>> {
+        let frames = self.bus.receive_many().map_err(|e| {
+            PyOSError::new_err(format!("Error receiving frames: {}", e))
         })?;
 
+        Ok(frames.into_iter().map(|f| PyJFrame {
+            frame: f,
+        }).collect())
+    }
+
+    // Implement the add_callback method for the PyJBus, which takes a function
+    // and adds it to the list of callbacks
+    fn add_callback(&mut self, frame_id: u32, callback: PyObject) -> PyResult<()> {
+        // Check that the callback takes a single argument
+        let gil = Python::with_gil(|py| {
+            let args = callback.getattr(py, "__code__").map_err(|e| {
+                PyRuntimeError::new_err(format!("Error calling __code__ on callback: {}", e))
+            }).expect("Failed to get __code__").getattr(py, "co_argcount").map_err(|e| {
+                PyRuntimeError::new_err(format!("Error getting co_argcount on callback: {}", e))
+            }).expect("Failed to read co_argcount").extract::<u32>(py).map_err(|e| {
+                PyRuntimeError::new_err(format!("Error extracting co_argcount from callback: {}", e))
+            })?;
+
+            if args < 1 {
+                return Err(PyValueError::new_err("Callback provided must take atleast one positional argument"));
+            }
+            Ok(())
+        })?;
+
+        // Store the callback in the HashMap
+        self.callbacks.insert(frame_id, callback);
+
+        Ok(())
+    }
+
+    // Implement the spin() method, which first calls the underlying receive_many to retrieve all the frames
+    // ,before calling the appropriate callback functions
+    fn spin(&mut self) -> PyResult<()> {
+        let frames = self.receive_many()?;
+        let gil = Python::with_gil(|py| {
+            for frame in frames {
+                // Lookup the callback function for the frame, given its ID
+                // If no callback is found, ignore the frame
+                let callback = match self.callbacks.get(&frame.frame.id) {
+                    Some(c) => c,
+                    None => continue,
+                };
+
+                // Call the callback function with the frame as an argument
+                // If an error occurs, return it
+                callback.call1(py, (frame.clone(),)).map_err(|e| {
+                    PyRuntimeError::new_err(format!("Error calling callback: {}", e))
+                }).expect("Error calling callback");
+            }
+        });
         Ok(())
     }
 }
@@ -118,7 +150,7 @@ impl PyJFrame {
     fn new(id: u32, data: Vec<u8>) -> PyResult<Self> {
         Ok(PyJFrame {
             frame: new_jframe(id, data).map_err(|e| {
-                PyOSError::new_err(format!("Error creating frame: {}", e))
+                PyValueError::new_err(format!("Error creating frame: {}", e))
             })?,
         })
     }
@@ -137,7 +169,7 @@ impl PyJFrame {
     #[setter]
     fn set_id(&mut self, id: u32) -> PyResult<()> {
         self.frame.set_id(id).map_err(|e| {
-            PyOSError::new_err(format!("Error setting ID: {}", e))
+            PyValueError::new_err(format!("Error setting ID: {}", e))
         })?;
 
         Ok(())
@@ -152,7 +184,7 @@ impl PyJFrame {
     #[setter]
     fn set_data(&mut self, data: Vec<u8>) -> PyResult<()> {
         self.frame.set_data(data).map_err(|e| {
-            PyOSError::new_err(format!("Error setting data: {}", e))
+            PyValueError::new_err(format!("Error setting data: {}", e))
         })?;
 
         Ok(())

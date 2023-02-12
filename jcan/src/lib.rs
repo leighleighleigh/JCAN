@@ -39,7 +39,7 @@ pub mod ffi {
         fn open(self: &mut JBus, interface: String) -> Result<()>;
         fn is_open(self: &JBus) -> bool;
 
-        fn spin_cycle(self: &mut JBus) -> Result<Vec<JFrame>>;
+        fn receive_many(self: &mut JBus) -> Result<Vec<JFrame>>;
 
         fn send(self: &mut JBus, frame: JFrame) -> Result<()>;
         fn receive(self: &mut JBus) -> Result<JFrame>;
@@ -295,7 +295,7 @@ impl JBus {
     // }
 
     // bus.spin() is the consumer of the mpsc channel (rx), and is what calls the callbacks!
-    pub fn spin_cycle(&mut self) -> Result<Vec<ffi::JFrame>, std::io::Error> {
+    pub fn receive_many(&mut self) -> Result<Vec<ffi::JFrame>, std::io::Error> {
         // Check if we are open
         if !self.is_open() {
             return Err(std::io::Error::new(
