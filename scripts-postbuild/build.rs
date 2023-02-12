@@ -79,36 +79,36 @@ fn main() {
         &out_dir.join("jcan.cc"),
     ).unwrap();
 
-    // // In the output files jcan.cc and jcan.h, replace the first instance of the string `#include "jcan/include/callback.h" with `#include "callback.h"`
-    // let mut jcan_h = fs::read_to_string(&out_dir.join("jcan.h")).unwrap();
-    // jcan_h = jcan_h.replace("#include \"jcan/include/callback.h\"", "#include \"callback.h\"");
-    // fs::write(&out_dir.join("jcan.h"), jcan_h).unwrap();
+    // In the output files jcan.cc and jcan.h, replace the first instance of the string `#include "jcan/include/callback.h" with `#include "callback.h"`
+    let mut jcan_h = fs::read_to_string(&out_dir.join("jcan.h")).unwrap();
+    jcan_h = jcan_h.replace("#include \"jcan/include/callback.h\"", "#include \"callback.h\"");
+    fs::write(&out_dir.join("jcan.h"), jcan_h).unwrap();
 
-    // let mut jcan_cc = fs::read_to_string(&out_dir.join("jcan.cc")).unwrap();
-    // jcan_cc = jcan_cc.replace("#include \"jcan/include/callback.h\"", "#include \"callback.h\"");
-    // fs::write(&out_dir.join("jcan.cc"), jcan_cc).unwrap();
+    let mut jcan_cc = fs::read_to_string(&out_dir.join("jcan.cc")).unwrap();
+    jcan_cc = jcan_cc.replace("#include \"jcan/include/callback.h\"", "#include \"callback.h\"");
+    fs::write(&out_dir.join("jcan.cc"), jcan_cc).unwrap();
 
 
-    // fs::copy(
-    //     Path::new(&manifest_dir)
-    //         .join("jcan")
-    //         .join("include")
-    //         .join("callback.h"),
-    //     &out_dir.join("callback.h"),
-    // ).unwrap();
+    fs::copy(
+        Path::new(&manifest_dir)
+            .join("jcan")
+            .join("include")
+            .join("callback.h"),
+        &out_dir.join("callback.h"),
+    ).unwrap();
 
-    // fs::copy(
-    //     Path::new(&manifest_dir)
-    //         .join("jcan")
-    //         .join("src")
-    //         .join("callback.cc"),
-    //     &out_dir.join("callback.cc"),
-    // ).unwrap();
+    fs::copy(
+        Path::new(&manifest_dir)
+            .join("jcan")
+            .join("src")
+            .join("callback.cc"),
+        &out_dir.join("callback.cc"),
+    ).unwrap();
 
-    // // As before with jcan.cc, replace the first instance of the string `#include "jcan/include/callback.h" with `#include "callback.h"`
-    // let mut callback_cc = fs::read_to_string(&out_dir.join("callback.cc")).unwrap();
-    // callback_cc = callback_cc.replace("#include \"jcan/include/callback.h\"", "#include \"callback.h\"");
-    // fs::write(&out_dir.join("callback.cc"), callback_cc).unwrap();
+    // As before with jcan.cc, replace the first instance of the string `#include "jcan/include/callback.h" with `#include "callback.h"`
+    let mut callback_cc = fs::read_to_string(&out_dir.join("callback.cc")).unwrap();
+    callback_cc = callback_cc.replace("#include \"jcan/include/callback.h\"", "#include \"callback.h\"");
+    fs::write(&out_dir.join("callback.cc"), callback_cc).unwrap();
 
 
     // Copy the cxxbridge generated source to the out directory

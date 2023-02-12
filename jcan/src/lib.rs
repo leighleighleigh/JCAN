@@ -23,10 +23,10 @@ pub mod ffi {
     }
 
     extern "Rust" {
-        #[cxx_name = "Bus"]
+        // #[cxx_name = "Bus"]
         type JBus;
 
-        #[cxx_name = "new_bus"]
+        // #[cxx_name = "new_bus"]
         fn new_jbus() -> Result<Box<JBus>>;
 
         fn set_id_filter(self: &mut JBus, allowed: Vec<u32>) -> Result<()>;
@@ -55,6 +55,9 @@ pub mod ffi {
     }
 
     unsafe extern "C++" {
+        include!("jcan/include/callback.h");
+        fn hello() -> Result<()>;
+        // fn hello_bus() -> Result<()>;
     }
 }
 
@@ -72,15 +75,6 @@ pub struct JBus {
 
     // The threads are stored in a vector, so they can be joined when the bus is dropped
     spin_handle: Option<thread::JoinHandle<Result<(), std::io::Error>>>,
-
-    // Callbacks functions are stored in a vector, so they can be called when a frame is received
-    // The first element of the tuple is the ID, the second is the callback function
-    // The callback function is an Opaque type, which surrounds a C++ function pointer. 
-    // This is needed because we cannot directly pass function pointers from C++ to Rust.
-    // The callback function is called from the spin thread, when a frame is received. 
-    // ALL callbacks matching the ID of the frame are called, in the order they were added.
-    // This is done to allow multiple callbacks to be added for the same ID.
-    // callbacks: Vec<(u32, FrameCallback)>,
 }
 
 // Implements JBus methods
@@ -269,31 +263,6 @@ impl JBus {
         Ok(())
     }
 
-    // // Registers a callback with ID 0, which will be called for all frames!
-    // pub fn on_receive(&mut self, callback: FrameCallback) -> Result<(), std::io::Error> {
-    //     self.on_receive_id(0, callback)
-    // }
-
-    // // Registers a callback with a specific ID
-    // pub fn on_receive_id(
-    //     &mut self,
-    //     id: u32,
-    //     callback: FrameCallback,
-    // ) -> Result<(), std::io::Error> {
-    //     // Bus must be opened AFTER registering callbacks
-    //     if self.is_open() {
-    //         return Err(std::io::Error::new(
-    //             std::io::ErrorKind::Other,
-    //             "Bus already open, please register callbacks before opening bus",
-    //         ));
-    //     }
-
-    //     // Push it to our callbacks Vector
-    //     self.callbacks.push((id, callback));
-
-    //     Ok(())
-    // }
-
     // bus.spin() is the consumer of the mpsc channel (rx), and is what calls the callbacks!
     pub fn receive_many(&mut self) -> Result<Vec<ffi::JFrame>, std::io::Error> {
         // Check if we are open
@@ -315,22 +284,6 @@ impl JBus {
             .unwrap()
             .try_iter()
             .collect::<Vec<ffi::JFrame>>();
-
-        // For each frame we have received, call each callback that has been registered
-        // for frame in frames {
-            // // Call all the callbacks which have been registered for this ID
-            // for callback in self.callbacks.iter() {
-            //     // Make a copy of the callback ID
-            //     let callback_id = callback.0.clone();
-            //     let callback_fn = &callback.1;
-
-            //     // If the callback ID is 0, or if the callback ID matches the frame ID, call the callback
-            //     if callback_id == 0 || callback_id == frame.id {
-            //         // Use the 'execute_callback' function (defined on the C++ side) to call the callback
-            //         // ffi::execute_callback(FrameCallback(callback_fn.0), frame.clone());
-            //     }
-            // }
-        // }
 
         Ok(frames)
     }
