@@ -148,53 +148,43 @@ impl PyJBus {
 impl PyJFrame {
     #[new]
     fn new(id: u32, data: Vec<u8>) -> PyResult<Self> {
-        Ok(PyJFrame {
-            frame: new_jframe(id, data).map_err(|e| {
-                PyValueError::new_err(format!("Error creating frame: {}", e))
-            })?,
-        })
+        // First build a JFrame from the id and data, using new _jframe.
+        // This method runs some data validation, so we need to use it.
+        let frame = new_jframe(id, data).map_err(|e| {
+            PyOSError::new_err(format!("Error creating frame: {}", e))
+        })?;
+
+        // Then convert JFrame to PyJFrame, using the From<> trait
+        Ok(frame.into())
     }
 
     // Implement string representation using the to_string method
     fn __str__(&self) -> PyResult<String> {
         Ok(self.frame.to_string())
     }
-
-    // Implement the get_id/set_id methods, as a property getter/setter
-    #[getter]
-    fn get_id(&self) -> PyResult<u32> {
-        Ok(self.frame.get_id())
-    }
-
-    #[setter]
-    fn set_id(&mut self, id: u32) -> PyResult<()> {
-        self.frame.set_id(id).map_err(|e| {
-            PyValueError::new_err(format!("Error setting ID: {}", e))
-        })?;
-
-        Ok(())
-    }
-
-    // Implement the get_data/set_data methods, as a property getter/setter
-    #[getter]
-    fn get_data(&self) -> PyResult<Vec<u8>> {
-        Ok(self.frame.get_data())
-    }
-
-    #[setter]
-    fn set_data(&mut self, data: Vec<u8>) -> PyResult<()> {
-        self.frame.set_data(data).map_err(|e| {
-            PyValueError::new_err(format!("Error setting data: {}", e))
-        })?;
-
-        Ok(())
-    }
     
+    // Implement the id property
+    #[getter]
+    fn id(&self) -> PyResult<u32> {
+        Ok(self.frame.id)
+    }
 
-
+    // Implement the data property
+    #[getter]
+    fn data(&self) -> PyResult<Vec<u8>> {
+        // Cannot return this since Vec<u8> doesn't implent Copy
+        // Ok(self.frame.data)
+        Ok(self.frame.data.clone())
+    }
 }
 
-// Implement From trait for ffi::JFrame -> PyJFrame
+impl From<PyJFrame> for ffi::JFrame {
+    fn from(py_frame: PyJFrame) -> Self {
+        // Unbox the PyJFrame, and return the JFrame
+        py_frame.frame
+    }
+}
+
 impl From<ffi::JFrame> for PyJFrame {
     fn from(frame: ffi::JFrame) -> Self {
         PyJFrame {
@@ -203,7 +193,6 @@ impl From<ffi::JFrame> for PyJFrame {
     }
 }
 
-// Implement From train for PyJFrame -> PyOject
 impl From<PyJFrame> for PyObject {
     fn from(frame: PyJFrame) -> Self {
         let gil = Python::with_gil(|py|{
