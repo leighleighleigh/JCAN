@@ -11,6 +11,14 @@ rm -rf "${SCRIPT_DIR}/release"
 # Then create it
 mkdir "${SCRIPT_DIR}/release"
 
+# Ask git to describe the current tag
+# This will be the latest annotated tag (such as v0.1.6)
+# Or it will be a combination of tag+commit-hash 
+# if the current commit is not tagged. (such as v0.1.6-1-gf3c5c5c)
+# If the working tree is dirty (uncommited changes), it will append -dirty
+# to the end of the tag. This ensures the build environment is tidy.
+GIT_DESCRIBED_TAG=$(git describe --tags --match 'v*' --dirty)
+
 # Get the current git tag
 GIT_TAG=$(git tag -l | tail -n1)
 
