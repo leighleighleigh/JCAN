@@ -18,12 +18,7 @@ struct Frame;
 // in a clean way.
 class JBus;
 
-
-// Callback functions
 typedef std::function<void(Frame)> CallbackFunction;
-// template <class T>
-// using MethodCallback = void (T::*)(Frame);
-
 
 class Bus{
 private:
