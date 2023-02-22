@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(cpp_receive_many)
+project(cpp_receive_callbacks)
 
 # ROS Foxy / Ubuntu 20 targets C++14
 set(CMAKE_CXX_STANDARD 14)
@@ -15,21 +15,21 @@ if (NOT TARGET jcan)
 endif()
 
 
-add_executable(cpp_receive_many src/main.cpp)
+add_executable(cpp_receive_callbacks src/main.cpp)
 
 target_include_directories(
-        cpp_receive_many
+        cpp_receive_callbacks
         PRIVATE
         include/
 )
 
-target_link_libraries(cpp_receive_many jcan)
+target_link_libraries(cpp_receive_callbacks jcan)
 
 # Windows-only configuration
 if(WIN32)
-    target_link_libraries(cpp_receive_many userenv ws2_32 bcrypt jcan)
+    target_link_libraries(cpp_receive_callbacks userenv ws2_32 bcrypt jcan)
     set_target_properties(
-            cpp_receive_many
+            cpp_receive_callbacks
             PROPERTIES
             MSVC_RUNTIME_LIBRARY "MultiThreadedDLL"
             RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}

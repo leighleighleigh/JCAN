@@ -3,7 +3,7 @@ extern crate socketcan;
 use cxx::private::UniquePtrTarget;
 use cxx::{type_id, ExternType, UniquePtr};
 use embedded_can::{ExtendedId, Frame as EmbeddedFrame, Id, StandardId};
-use socketcan::{CanFilter, CanFrame, CanSocket, Socket};
+use socketcan::{CanFilter, CanFrame, CanSocket, Socket, CanSocketOpenError};
 use std::any::Any;
 use std::borrow::Borrow;
 use std::sync::mpsc::{self, TryRecvError};
@@ -39,7 +39,7 @@ pub mod ffi {
         fn open(self: &mut JBus, interface: String) -> Result<()>;
         fn is_open(self: &JBus) -> bool;
 
-        fn receive_many(self: &mut JBus) -> Result<Vec<JFrame>>;
+        fn receive_from_thread_buffer(self: &mut JBus) -> Result<Vec<JFrame>>;
 
         fn send(self: &mut JBus, frame: JFrame) -> Result<()>;
         fn receive(self: &mut JBus) -> Result<JFrame>;
@@ -107,11 +107,35 @@ impl JBus {
         let tx = self.spin_recv_tx.clone().unwrap();
 
         // Create a thread
-        self.spin_handle = Some(thread::spawn(move || {
-            // Open the socket
-            let socket = CanSocket::open(&interface)
-                .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))
-                .unwrap();
+        self.spin_handle = Some(thread::Builder::new().name("jcan_spin_thread".to_string()).spawn(move || {
+
+            // Open the socket, and handle the following errors with additional information
+            // LookupError(ENODEV) - No such device
+            // LookupError(EPERM) - Operation not permitted
+            // LookupError(EACCES) - Permission denied
+            // LookupError(EBUSY) - Device or resource busy
+            let socket = CanSocket::open(&interface).map_err(|e| match e {
+                CanSocketOpenError::LookupError(e) => match e {
+                    nix::errno::Errno::ENODEV => std::io::Error::new(
+                        std::io::ErrorKind::NotFound,
+                        format!("No such device: {}", interface),
+                    ),
+                    nix::errno::Errno::EPERM => std::io::Error::new(
+                        std::io::ErrorKind::PermissionDenied,
+                        format!("Permission denied: {}", interface),
+                    ),
+                    nix::errno::Errno::EACCES => std::io::Error::new(
+                        std::io::ErrorKind::PermissionDenied,
+                        format!("Permission denied: {}", interface),
+                    ),
+                    nix::errno::Errno::EBUSY => std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        format!("Device busy: {}", interface),
+                    ),
+                    _ => std::io::Error::new(std::io::ErrorKind::Other, e),
+                },
+                _ => std::io::Error::new(std::io::ErrorKind::Other, e),
+            }).unwrap();
 
             // Spin thread is actually two threads in one - the receive thread, and the send thread.
             // Each thread has its own loop, which is broken when the socket is closed.
@@ -140,7 +164,7 @@ impl JBus {
             let sendrx = sendrx;
 
             // Create a thread to handle received frames
-            let recv_thread = thread::spawn(move || {
+            let recv_thread = thread::Builder::new().name("jcan_recv_thread".to_string()).spawn(move || {
                 loop {
                     // Read frames
                     match socket_recv.read_frame() {
@@ -160,10 +184,10 @@ impl JBus {
                         }
                     }
                 }
-            });
+            })?;
 
             // Create a thread to handle sent frames
-            let send_thread = thread::spawn(move || {
+            let send_thread = thread::Builder::new().name("jcan_send_thread".to_string()).spawn(move || {
                 loop {
                     // Blocks until we have something to send
                     match sendrx.recv() {
@@ -180,7 +204,7 @@ impl JBus {
                         }
                     }
                 }
-            });
+            })?;
             
             // Join the threads
             recv_thread.join().unwrap();
@@ -188,7 +212,7 @@ impl JBus {
 
             // Ok
             Ok(())
-        }));
+        })?);
 
         Ok(())
     }
@@ -265,7 +289,7 @@ impl JBus {
     }
 
     // bus.spin() is the consumer of the mpsc channel (rx), and is what calls the callbacks!
-    pub fn receive_many(&mut self) -> Result<Vec<ffi::JFrame>, std::io::Error> {
+    pub fn receive_from_thread_buffer(&mut self) -> Result<Vec<ffi::JFrame>, std::io::Error> {
         // Check if we are open
         if !self.is_open() {
             return Err(std::io::Error::new(

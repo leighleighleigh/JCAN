@@ -35,7 +35,7 @@ public:
   void send(Frame frame);
   void receive();
 
-  std::vector<Frame> receive_many();
+  std::vector<Frame> receive_from_thread_buffer();
 
   void add_callback(int id, void (*callback)(Frame));
 

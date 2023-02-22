@@ -33,9 +33,9 @@ namespace org::jcan
       this->jBus->receive();
    }
 
-   std::vector<Frame> Bus::receive_many() {
+   std::vector<Frame> Bus::receive_from_thread_buffer() {
       std::vector<Frame> stdv;
-      auto frames = this->jBus->receive_many();
+      auto frames = this->jBus->receive_from_thread_buffer();
       std::copy(frames.begin(), frames.end(), std::back_inserter(stdv));
       return stdv;
    }
@@ -45,8 +45,8 @@ namespace org::jcan
   }
 
   void Bus::spin() {
-    // Get a vector of frames from the bus (receive_many)
-    auto frames = this->receive_many();
+    // Get a vector of frames from the bus (receive_from_thread_buffer)
+    auto frames = this->receive_from_thread_buffer();
 
     // For each frame, call the callback function associated with the frame's ID
     for (auto frame : frames) {

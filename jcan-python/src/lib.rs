@@ -84,8 +84,8 @@ impl PyJBus {
     }
 
     // Receive many will return a list of buffered frames from the receive thread
-    fn receive_many(&mut self) -> PyResult<Vec<PyJFrame>> {
-        let frames = self.bus.receive_many().map_err(|e| {
+    fn receive_from_thread_buffer(&mut self) -> PyResult<Vec<PyJFrame>> {
+        let frames = self.bus.receive_from_thread_buffer().map_err(|e| {
             PyOSError::new_err(format!("Error receiving frames: {}", e))
         })?;
 
@@ -119,10 +119,10 @@ impl PyJBus {
         Ok(())
     }
 
-    // Implement the spin() method, which first calls the underlying receive_many to retrieve all the frames
+    // Implement the spin() method, which first calls the underlying receive_from_thread_buffer to retrieve all the frames
     // ,before calling the appropriate callback functions
     fn spin(&mut self) -> PyResult<()> {
-        let frames = self.receive_many()?;
+        let frames = self.receive_from_thread_buffer()?;
         let gil = Python::with_gil(|py| {
             for frame in frames {
                 // Lookup the callback function for the frame, given its ID
