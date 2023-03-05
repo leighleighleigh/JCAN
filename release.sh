@@ -19,6 +19,11 @@ mkdir "${SCRIPT_DIR}/release"
 # to the end of the tag. This ensures the build artifacts are clearly labelled.
 GIT_DESCRIBED_TAG=$(git describe --tags --match 'v*' --dirty)
 
+# Since python wheels use the hyphen '-' to separate the version number, we need to 
+# replace the GIT_DESCRIBED_TAG hypens with underscores
+# e.g. v0.1.6-1-gf3c5c5c -> v0.1.6_1_gf3c5c5c
+GIT_DESCRIBED_TAG=${GIT_DESCRIBED_TAG//-/_}
+
 # Get the latest annotated tag that starts with 'v'
 # e.g v0.1.5
 GIT_LATEST_TAG=$(git tag -l 'v*' | tail -n1)
@@ -40,6 +45,10 @@ then
 else
     echo "Release tag: ${GIT_TAG}"
 fi
+
+# Remove leading 'v' from the GIT_TAG
+# e.g. v0.1.5 -> 0.1.5
+GIT_TAG=${GIT_TAG#v}
 
 # Get the python package version from the setup.py file
 # This is the version number that will be used in the wheel filename

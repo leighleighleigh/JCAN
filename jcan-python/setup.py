@@ -17,10 +17,10 @@ setup(
     ],
     include_package_data=True,
     # Requirements
-    install_requires=[
-        "setuptools-rust",
-    ],
-    setup_requires=[
-        "setuptools-rust",
-    ],
+    # install_requires=[
+    #     "setuptools-rust",
+    # ],
+    # setup_requires=[
+    #     "setuptools-rust",
+    # ],
 )
