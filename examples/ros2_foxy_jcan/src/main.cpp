@@ -19,13 +19,22 @@ class MinimalPublisher : public rclcpp::Node
     MinimalPublisher()
     : Node("can_publisher"), count_(0)
     {
-      canbus_ = open_bus("vcan0").into_raw();
+      canbus_ = new_bus();
+
+      bus->add_callback_to(0x100, &this, &MinimalPublisher::on_frame);
+
+      canbus_.open("vcan0");
+
       publisher_ = this->create_publisher<std_msgs::msg::String>("topic", 10);
-      timer_ = this->create_wall_timer(
-      500ms, std::bind(&MinimalPublisher::timer_callback, this));
+      timer_ = this->create_wall_timer(500ms, std::bind(&MinimalPublisher::timer_callback, this));
     }
 
   private:
+
+    void on_frame(Frame frame) {
+      RCLCPP_INFO(this->get_logger(), "Received frame: %s\n", frame.to_string().c_str());
+    }
+
     void timer_callback()
     {
       auto message = std_msgs::msg::String();
@@ -48,7 +57,7 @@ class MinimalPublisher : public rclcpp::Node
     rclcpp::TimerBase::SharedPtr timer_;
     rclcpp::Publisher<std_msgs::msg::String>::SharedPtr publisher_;
     size_t count_;
-    Bus *canbus_;
+    std::unique_ptr<Bus> canbus_;
 };
 
 int main(int argc, char * argv[])
