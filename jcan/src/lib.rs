@@ -2,8 +2,8 @@ extern crate socketcan;
 
 use embedded_can::{ExtendedId, Frame as EmbeddedFrame, Id, StandardId};
 use socketcan::{CanFilter, CanFrame, CanSocket, Socket, CanSocketOpenError};
-use std::sync::mpsc::{self};
-use std::sync::{Arc};
+use std::sync::mpsc;
+use std::sync::Arc;
 use std::thread;
 
 #[cxx::bridge(namespace = "org::jcan")]
@@ -24,12 +24,7 @@ pub mod ffi {
         fn new_jbus() -> Result<Box<JBus>>;
 
         fn set_id_filter(self: &mut JBus, allowed: Vec<u32>) -> Result<()>;
-        fn set_id_filter_mask(self: &mut JBus, allowed_mask: u32) -> Result<()>;
-
-        // // Is called from C++, adding an opaque type to the vector of callbacks.
-        // // This type 'FrameCallback' is a C++ functor, which is wrapped in a UniquePtr
-        // fn on_receive(self: &mut JBus, callback: FrameCallback) -> Result<()>;
-        // fn on_receive_id(self: &mut JBus, id: u32, callback: FrameCallback) -> Result<()>;
+        fn set_id_filter_mask(self: &mut JBus, allowed: u32, allowed_mask: u32) -> Result<()>;
 
         fn open(self: &mut JBus, interface: String) -> Result<()>;
         fn is_open(self: &JBus) -> bool;
@@ -284,7 +279,7 @@ impl JBus {
     }
 
     // Directly sets the ID filter via mask
-    pub fn set_id_filter_mask(&mut self, allowed_mask: u32) -> Result<(), std::io::Error> {
+    pub fn set_id_filter_mask(&mut self, allowed: u32, allowed_mask: u32) -> Result<(), std::io::Error> {
         // If we are open, return an error
         if self.is_open() {
             return Err(std::io::Error::new(
@@ -300,7 +295,7 @@ impl JBus {
         // receive_id & mask == filtered_id & mask
         // By setting a filtered_id of 0xFFFF, and a restrictive mask (of, say, 0x3),
         // The filter will accept ALL frames that have a binary '1' in the lower two bits.
-        let filter = CanFilter::new(0xFFFFFFFF, allowed_mask);
+        let filter = CanFilter::new(allowed, allowed_mask);
 
         filters.push(filter);
 

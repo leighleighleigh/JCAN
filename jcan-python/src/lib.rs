@@ -83,8 +83,8 @@ impl PyJBus {
         Ok(())
     }
 
-    fn set_id_filter_mask(&mut self, allowed_mask: u32) -> PyResult<()> {
-        self.bus.set_id_filter_mask(allowed_mask).map_err(|e| {
+    fn set_id_filter_mask(&mut self, allowed: u32, allowed_mask: u32) -> PyResult<()> {
+        self.bus.set_id_filter_mask(allowed, allowed_mask).map_err(|e| {
             PyOSError::new_err(format!("Error setting filter mask: {}", e))
         })?;
         Ok(())
