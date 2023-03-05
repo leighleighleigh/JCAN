@@ -25,6 +25,10 @@ namespace org::jcan
       this->jBus->set_id_filter(rust_vec);
    }
 
+   void Bus::set_id_filter_mask(uint16_t allowed_mask) {
+      this->jBus->set_id_filter_mask(allowed_mask);
+   }
+
    void Bus::send(Frame frame) {
       this->jBus->send(frame);
    }

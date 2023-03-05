@@ -31,6 +31,7 @@ public:
   void open(const char *name);
   
   void set_id_filter(std::vector<uint32_t> allowed_ids);
+  void set_id_filter_mask(uint16_t mask);
 
   void send(Frame frame);
   void receive();

@@ -76,9 +76,16 @@ impl PyJBus {
     }
 
     // Implement set_id_filter for the PyJBus, which takes a list of IDs
-    fn set_id_filter(&mut self, ids: Vec<u32>) -> PyResult<()> {
-        self.bus.set_id_filter(ids).map_err(|e| {
-            PyOSError::new_err(format!("Error setting ID filter: {}", e))
+    fn set_id_filter(&mut self, allowed_ids: Vec<u32>) -> PyResult<()> {
+        self.bus.set_id_filter(allowed_ids).map_err(|e| {
+            PyOSError::new_err(format!("Error setting filter: {}", e))
+        })?;
+        Ok(())
+    }
+
+    fn set_id_filter_mask(&mut self, allowed_mask: u32) -> PyResult<()> {
+        self.bus.set_id_filter_mask(allowed_mask).map_err(|e| {
+            PyOSError::new_err(format!("Error setting filter mask: {}", e))
         })?;
         Ok(())
     }
@@ -98,7 +105,7 @@ impl PyJBus {
     // and adds it to the list of callbacks
     fn add_callback(&mut self, frame_id: u32, callback: PyObject) -> PyResult<()> {
         // Check that the callback takes a single argument
-        let gil = Python::with_gil(|py| {
+        let _gil = Python::with_gil(|py| {
             let args = callback.getattr(py, "__code__").map_err(|e| {
                 PyRuntimeError::new_err(format!("Error calling __code__ on callback: {}", e))
             }).expect("Failed to get __code__").getattr(py, "co_argcount").map_err(|e| {
@@ -123,7 +130,7 @@ impl PyJBus {
     // ,before calling the appropriate callback functions
     fn spin(&mut self) -> PyResult<()> {
         let frames = self.receive_from_thread_buffer()?;
-        let gil = Python::with_gil(|py| {
+        let _gil = Python::with_gil(|py| {
             for frame in frames {
                 // Lookup the callback function for the frame, given its ID
                 // If no callback is found, ignore the frame

@@ -1,16 +1,10 @@
 extern crate socketcan;
 
-use cxx::private::UniquePtrTarget;
-use cxx::{type_id, ExternType, UniquePtr};
 use embedded_can::{ExtendedId, Frame as EmbeddedFrame, Id, StandardId};
 use socketcan::{CanFilter, CanFrame, CanSocket, Socket, CanSocketOpenError};
-use std::any::Any;
-use std::borrow::Borrow;
-use std::sync::mpsc::{self, TryRecvError};
-use std::sync::{Arc, RwLock, Mutex};
+use std::sync::mpsc::{self};
+use std::sync::{Arc};
 use std::thread;
-use std::time::Duration;
-use std::{error::Error, ops::Deref};
 
 #[cxx::bridge(namespace = "org::jcan")]
 pub mod ffi {
@@ -30,6 +24,7 @@ pub mod ffi {
         fn new_jbus() -> Result<Box<JBus>>;
 
         fn set_id_filter(self: &mut JBus, allowed: Vec<u32>) -> Result<()>;
+        fn set_id_filter_mask(self: &mut JBus, allowed_mask: u32) -> Result<()>;
 
         // // Is called from C++, adding an opaque type to the vector of callbacks.
         // // This type 'FrameCallback' is a C++ functor, which is wrapped in a UniquePtr
@@ -281,6 +276,33 @@ impl JBus {
             // Push it to the vector
             filters.push(filter);
         }
+
+        // Set the filter so it can be used during socket open
+        self.filters = filters.clone();
+
+        Ok(())
+    }
+
+    // Directly sets the ID filter via mask
+    pub fn set_id_filter_mask(&mut self, allowed_mask: u32) -> Result<(), std::io::Error> {
+        // If we are open, return an error
+        if self.is_open() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "Set frame ID filter before opening bus",
+            ));
+        }
+
+        // Create a vector of CanFilters
+        let mut filters = Vec::new();
+
+        // Filters will allow an incoming packed if it passes the condition
+        // receive_id & mask == filtered_id & mask
+        // By setting a filtered_id of 0xFFFF, and a restrictive mask (of, say, 0x3),
+        // The filter will accept ALL frames that have a binary '1' in the lower two bits.
+        let filter = CanFilter::new(0xFFFFFFFF, allowed_mask);
+
+        filters.push(filter);
 
         // Set the filter so it can be used during socket open
         self.filters = filters.clone();
