@@ -17,7 +17,7 @@ if __name__ == "__main__":
 
     def on_frame_d(frame : jcan.Frame):
         print(f"FRAME 1AD {frame.data}")
-        print(frame.data[0])
+        # print(frame.data[0])
 
     bus.add_callback(0x1A5, on_frame_five)
     bus.add_callback(0x1AD, on_frame_d)
@@ -33,6 +33,10 @@ if __name__ == "__main__":
         # Spin is required for our callbacks to be processed.
         # Make sure .spin is called from your MAIN THREAD
         bus.spin()
+
+        # bus.spin is non-blocking if nothing is there - resulting in a 'busy' loop
+        # this sleep is to prevent that. In your code, you will probably be doing more important things here!
+        time.sleep(0.01)
 
 
 
