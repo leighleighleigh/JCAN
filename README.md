@@ -40,44 +40,44 @@ Python example showing most of the JCAN features
 ```python
 #!/usr/bin/env python
 import jcan
-from time import sleep
+import time
 
-# This will raise an exception if vcan0 does not exist
-bus = jcan.Bus("vcan0")
+if __name__ == "__main__":
+    bus = jcan.Bus()
 
-# This will block until a frame is available
-# On another terminal, try sending one with `cansend vcan0 123#0A1B2C3D`
-f = bus.receive()
-print(str(f))
+    # Set a filter, from list...
+    # bus.set_id_filter([0x1A0,0x1A1,0x1A2,0x1A3])
 
-# This will block until a frame with the matching ID is received
-# Behind the scenes, ALL frames are being received, and then ignored if their ID field is different.
-# This is inefficient, but simple
-f = bus.receive_with_id(0x44)
-print(str(f))
+    # .. or from a mask!
+    bus.set_id_filter_mask(0x1A0, 0xFF0)
 
-# This will set the jcan Bus so that it can ONLY receive frames with these IDs in particular.
-# This is more efficient, since the filtering is done at the socket level, rather than by the JBUS library
-bus.set_id_filter([0x42,0x66,0x108])
+    # This is our callback function for new frames
+    def on_frame_five(frame : jcan.Frame):
+        print(f"FRAME 1A5: {frame.data}")
 
-# This will block until a message with one of the above IDs is received
-f = bus.receive()
-print(str(f))
+    def on_frame_d(frame : jcan.Frame):
+        print(f"FRAME 1AD {frame.data}")
+        # print(frame.data[0])
 
-# Here is how you can send a Frame
-f = jcan.Frame(0x12, bytes([1,2,3]))
-bus.send(f)
+    bus.add_callback(0x1A5, on_frame_five)
+    bus.add_callback(0x1AD, on_frame_d)
 
-# This is an example of non-blocking receive operation 
-# Frames are buffered in the background by the socket, until they are needed
-while True:
-  print("Checking for frames...")
-  frames = bus.receive_nonblocking()
-  for f in frames:
-    print(str(f))
-    
-  print("Doing other things...")
-  time.sleep(1.0)
+    bus.open("vcan0")
+
+    while True:
+        # The list of values will be cast to uint8's by JCAN library - so be careful to double check the values!
+        # frameToSend = jcan.Frame(0x200, [time.time()%255, (time.time()*1000)%255])
+        # print(f"Sending {frameToSend}")
+        # bus.send(frameToSend)
+
+        # Spin is required for our callbacks to be processed.
+        # Make sure .spin is called from your MAIN THREAD
+        bus.spin()
+
+        # bus.spin is non-blocking if nothing is there - resulting in a 'busy' loop
+        # this sleep is to prevent that. In your code, you will probably be doing more important things here!
+        time.sleep(0.01)
+
 ```
 
 </p>
@@ -92,30 +92,46 @@ C++ example showing Frame building and sending.
 #include <stdint.h>
 #include <stdio.h>
 #include <vector>
-#include "jcan.h"
+#include "jcan/jcan.h"
 
 using namespace org::jcan;
 
-// main function which opens a JBus, creates a JFrame, and sends it!
+/* 
+A basic example of sending and recieving CAN Frames with JCAN
+*/
+
 int main(int argc, char **argv) {
-    // Open the CAN bus, will raise an error if vcan0 is not available
-    Bus *bus = org::jcan::open_bus("vcan0").into_raw();
+    // Build new Bus object, which is a unique pointer to a Bus object
+    std::unique_ptr<Bus> bus = new_bus();
 
-    // Build a frame
-    Frame frame;
-    // Both standard and extended IDs are supported!
-    frame.id = 0x42;
-    // Push bytes into frame from MSB to LSB
-    // DLC is automatically calculated
-    frame.data.push_back(0x01);
-    frame.data.push_back(0x02);
-    frame.data.push_back(0x03);
-    frame.data.push_back(0x04);
+    // Set ID filter using a vector of allowed IDs we can receive
+    // std::vector<uint32_t> allowed_ids = {0x100, 0x123, 0x456, 0x789};
+    // bus->set_id_filter(allowed_ids);
 
-    // Send it!
-    bus->send(frame);
-    
-    // Open another terminal and type `candump vcan0`, then run this program again!
+    // We can also also set a mask of allowed IDs
+    // The filter below will only accept frames who's ID is 0x1A#, where '#' can be anything.
+    // Combinations of base+mask can be used to make a very flexible filter.. but it can get quite confusing, too!
+    // The format used below, of the form 'base_id + part of ID we don't care about',
+    // is a nice simple way to use this feature.
+    bus->set_id_filter_mask(0x1A0,0xFF0);
+
+    // Open the bus
+    bus->open("vcan0");
+
+    // Loop forever, sending frames and printing the ones we recieve
+    unsigned char i = 0;
+
+    while(true)
+    {
+        i++;
+        Frame frameToSend = new_frame(0x200, {i,i/10,i/100,i%2,i%3,i%4,i%5,i*10});
+        printf("Sending: %s...\n",frameToSend.to_string().c_str());
+        bus->send(frameToSend);
+
+        printf("Waiting for frame...\n");
+        Frame frameReceived = bus->receive();
+        printf("Received: %s\n", frameReceived.to_string().c_str());
+    }
 
     return 0;
 }
