@@ -8,9 +8,9 @@ extern crate jcan;
 
 use std::collections::HashMap;
 
-use pyo3::exceptions::{PyOSError, PyRuntimeError, PyValueError};
+use pyo3::exceptions::{PyOSError, PyRuntimeError, PyValueError, PyTypeError};
 use pyo3::prelude::*;
-use pyo3::types::{PyModule};
+use pyo3::types::{PyModule, PyList};
 use pyo3::{PyResult};
 
 use jcan::*;
@@ -154,7 +154,23 @@ impl PyJBus {
 #[pymethods]
 impl PyJFrame {
     #[new]
-    fn new(id: u32, data: Vec<u8>) -> PyResult<Self> {
+    fn new(id: u32, data: &PyList) -> PyResult<Self> {
+        // We use a PyList here, so that the user can pass in a list of integers OR floats.
+        // We will cast them to uint8's here, or raise an error if the type was wildly wrong (such as str)
+        let data: Vec<u8> = data.iter().map(|x| {
+            // If x is PyLong or PyFloat, we can convert it to a U8 (in some kind of way)
+            // First try extract to u8 ,then to f32->u8, else raise error
+            if let Ok(x) = x.extract::<u8>() {
+                x
+            } else if let Ok(x) = x.extract::<f32>() {
+                x as u8
+            } else {
+                // If x is not PyLong or PyFloat, we cannot convert it to a u8
+                // Raise a TypeError
+                panic!("{}",PyTypeError::new_err("Data must be a list of integers or floats"));
+            }
+        }).collect();
+
         // First build a JFrame from the id and data, using new _jframe.
         // This method runs some data validation, so we need to use it.
         let frame = new_jframe(id, data).map_err(|e| {
