@@ -74,6 +74,18 @@ function build_target {
     cp -r jcan-python/dist/* out/wheels/
 }
 
+# If the flag '--host' is passed, then only build for the host machine
+if [[ "${1}" == "--host" ]];
+then
+    echo "Building for host machine only"
+    # Derive the target from the host machine, using uname -m
+    HOSTMACHINE=$(uname -m)
+    # Target name is HOSTMACHINE-unknown-linux-gnu
+    TARGETNAME="${HOSTMACHINE}-unknown-linux-gnu"
+    build_target $TARGETNAME
+    exit 0
+fi
+
 # Build for aarch64
 build_target "aarch64-unknown-linux-gnu"
 
