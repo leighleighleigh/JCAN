@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 import jcan
+import time
 
-bustype = 'socketcan'
-channel = 'vcan0'
+channel = 'vcan1'
 
-bus = jcan.Bus(channel)
+bus = jcan.Bus()
+bus.open(channel)
 
 while True:
-    f = jcan.Frame(0x123, [0xD,0xE,0xA,0xD,0xB,0xE,0xE,0xF])
+    f = jcan.Frame(0x1A3, [0xC,0x0,0xF,0xF,0xE,0xE,time.time_ns()])
     bus.send(f)
 
