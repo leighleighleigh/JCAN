@@ -39,7 +39,7 @@ impl PyJBus {
     fn new() -> PyResult<Self> {
         // Unbox the result of new_jbus, and return it
         let bus = new_jbus().map_err(|e| {
-            PyOSError::new_err(format!("Error creating Bus: {}", e))
+            PyOSError::new_err(format!("{}", e))
         })?;
 
         // bus is a Box<JBus>, so we need to dereference it
@@ -50,9 +50,11 @@ impl PyJBus {
     }
 
     // Implement the open method for the PyJBus
-    fn open(&mut self, interface: String) -> PyResult<()> {
-        self.bus.open(interface).map_err(|e| {
-            PyOSError::new_err(format!("Error opening bus: {}", e))
+    // Add pyo3 default arguments of 256 for tx_queue_len and rx_queue_len
+    #[args(tx_queue_len = 256, rx_queue_len = 256)]
+    fn open(&mut self, interface: String, tx_queue_len: u16, rx_queue_len: u16) -> PyResult<()> {
+        self.bus.open(interface, tx_queue_len, rx_queue_len).map_err(|e| {
+            PyOSError::new_err(format!("{}", e))
         })?;
         Ok(())
     }
@@ -60,7 +62,7 @@ impl PyJBus {
     // Implement the receive method for the PyJBus
     fn receive(&mut self) -> PyResult<PyJFrame> {
         let frame = self.bus.receive().map_err(|e| {
-            PyOSError::new_err(format!("Error receiving frame: {}", e))
+            PyOSError::new_err(format!("{}", e))
         })?;
         Ok(PyJFrame {
             frame,
@@ -70,7 +72,7 @@ impl PyJBus {
     // Implement the send method for the PyJBus
     fn send(&mut self, frame: PyJFrame) -> PyResult<()> {
         self.bus.send(frame.frame).map_err(|e| {
-            PyOSError::new_err(format!("Error sending frame: {}", e))
+            PyOSError::new_err(format!("{}", e))
         })?;
         Ok(())
     }
@@ -78,14 +80,14 @@ impl PyJBus {
     // Implement set_id_filter for the PyJBus, which takes a list of IDs
     fn set_id_filter(&mut self, allowed_ids: Vec<u32>) -> PyResult<()> {
         self.bus.set_id_filter(allowed_ids).map_err(|e| {
-            PyOSError::new_err(format!("Error setting filter: {}", e))
+            PyOSError::new_err(format!("{}", e))
         })?;
         Ok(())
     }
 
     fn set_id_filter_mask(&mut self, allowed: u32, allowed_mask: u32) -> PyResult<()> {
         self.bus.set_id_filter_mask(allowed, allowed_mask).map_err(|e| {
-            PyOSError::new_err(format!("Error setting filter mask: {}", e))
+            PyOSError::new_err(format!("{}", e))
         })?;
         Ok(())
     }
@@ -93,7 +95,7 @@ impl PyJBus {
     // Receive many will return a list of buffered frames from the receive thread
     fn receive_from_thread_buffer(&mut self) -> PyResult<Vec<PyJFrame>> {
         let frames = self.bus.receive_from_thread_buffer().map_err(|e| {
-            PyOSError::new_err(format!("Error receiving frames: {}", e))
+            PyOSError::new_err(format!("{}", e))
         })?;
 
         Ok(frames.into_iter().map(|f| PyJFrame {
@@ -133,10 +135,16 @@ impl PyJBus {
         let _gil = Python::with_gil(|py| {
             for frame in frames {
                 // Lookup the callback function for the frame, given its ID
-                // If no callback is found, ignore the frame
+                // If no callback is found, check if we have an 'any' callback (ID of 0) assigned,
+                // otherwise ignore the frame.
                 let callback = match self.callbacks.get(&frame.frame.id) {
                     Some(c) => c,
-                    None => continue,
+                    None => {
+                        match self.callbacks.get(&0) {
+                            Some(c) => c,
+                            None => continue,
+                        }
+                    },
                 };
 
                 // Call the callback function with the frame as an argument

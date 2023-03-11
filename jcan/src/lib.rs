@@ -1,10 +1,13 @@
 extern crate socketcan;
 
+use log::{debug, error, warn};
 use embedded_can::{ExtendedId, Frame as EmbeddedFrame, Id, StandardId};
 use socketcan::{CanFilter, CanFrame, CanSocket, Socket, CanSocketOpenError};
 use std::sync::mpsc;
 use std::sync::Arc;
+use std::sync::atomic::Ordering;
 use std::thread;
+use std::time::Duration;
 
 #[cxx::bridge(namespace = "org::jcan")]
 pub mod ffi {
@@ -26,7 +29,7 @@ pub mod ffi {
         fn set_id_filter(self: &mut JBus, allowed: Vec<u32>) -> Result<()>;
         fn set_id_filter_mask(self: &mut JBus, allowed: u32, allowed_mask: u32) -> Result<()>;
 
-        fn open(self: &mut JBus, interface: String) -> Result<()>;
+        fn open(self: &mut JBus, interface: String, tx_queue_len: u16, rx_queue_len: u16) -> Result<()>;
         fn is_open(self: &JBus) -> bool;
 
         fn receive_from_thread_buffer(self: &mut JBus) -> Result<Vec<JFrame>>;
@@ -58,11 +61,11 @@ pub struct JBus {
 
     // Setup a MPSC channel which is consumed by the main thread calling bus.spin()
     // The spin_handle is the producer for this channel.
-    spin_recv_tx: Option<mpsc::Sender<ffi::JFrame>>,
+    spin_recv_tx: Option<mpsc::SyncSender<ffi::JFrame>>,
     spin_recv_rx: Option<mpsc::Receiver<ffi::JFrame>>,
 
     // Setup a MPSC channel which is consumed by the spin thread, sending frames onto the socket.
-    spin_send_tx: Option<mpsc::Sender<ffi::JFrame>>,
+    spin_send_tx: Option<mpsc::SyncSender<ffi::JFrame>>,
 
     // The threads are stored in a vector, so they can be joined when the bus is dropped
     spin_handle: Option<thread::JoinHandle<Result<(), std::io::Error>>>,
@@ -71,7 +74,9 @@ pub struct JBus {
 // Implements JBus methods
 impl JBus {
     // Opens with the socket opened in a background thread - the spin thread
-    pub fn open(&mut self, interface: String) -> Result<(), std::io::Error> {
+    pub fn open(&mut self, interface: String, tx_queue_size: u16, rx_queue_size: u16) -> Result<(), std::io::Error> {
+        env_logger::init();
+
         // Check if already open
         if self.is_open() {
             return Err(std::io::Error::new(
@@ -81,13 +86,13 @@ impl JBus {
         }
 
         // Create a channel to handle received (inbound) frames
-        let (tx, rx) = mpsc::channel();
+        let (tx, rx) = mpsc::sync_channel(rx_queue_size.into());
         // Store chanel variables
         self.spin_recv_tx = Some(tx);
         self.spin_recv_rx = Some(rx);
 
         // Create a channel to handle sent (outbound) frames
-        let (sendtx, sendrx) = mpsc::channel();
+        let (sendtx, sendrx) = mpsc::sync_channel(tx_queue_size.into());
         // Store channel variables
         self.spin_send_tx = Some(sendtx);
 
@@ -95,6 +100,17 @@ impl JBus {
         let filters = self.filters.clone();
         // Clone the tx channel
         let tx = self.spin_recv_tx.clone().unwrap();
+        
+        // We will create a Mutex aroud a bool, so we can check if the socket is open
+        // The mutex is important because the operation is happening in a new thread - so the main thread
+        // needs to wait until the mutex lock is released.
+        let socket_opened = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let socket_error = Arc::new(std::sync::atomic::AtomicBool::new(false));
+
+        // Clone the socket_opened mutex
+        let socket_opened_clone = socket_opened.clone();
+        // Clone the socket_error mutex
+        let socket_error_clone = socket_error.clone();
 
         // Create a thread
         self.spin_handle = Some(thread::Builder::new().name("jcan_spin_thread".to_string()).spawn(move || {
@@ -104,28 +120,38 @@ impl JBus {
             // LookupError(EPERM) - Operation not permitted
             // LookupError(EACCES) - Permission denied
             // LookupError(EBUSY) - Device or resource busy
-            let socket = CanSocket::open(&interface).map_err(|e| match e {
-                CanSocketOpenError::LookupError(e) => match e {
-                    nix::errno::Errno::ENODEV => std::io::Error::new(
-                        std::io::ErrorKind::NotFound,
-                        format!("No such device: {}", interface),
-                    ),
-                    nix::errno::Errno::EPERM => std::io::Error::new(
-                        std::io::ErrorKind::PermissionDenied,
-                        format!("Permission denied: {}", interface),
-                    ),
-                    nix::errno::Errno::EACCES => std::io::Error::new(
-                        std::io::ErrorKind::PermissionDenied,
-                        format!("Permission denied: {}", interface),
-                    ),
-                    nix::errno::Errno::EBUSY => std::io::Error::new(
-                        std::io::ErrorKind::Other,
-                        format!("Device busy: {}", interface),
-                    ),
-                    _ => std::io::Error::new(std::io::ErrorKind::Other, e),
+            let socket = match CanSocket::open(&interface).map_err(|e| {
+                match e {
+                    CanSocketOpenError::LookupError(nix::errno::Errno::ENODEV) => {
+                        std::io::Error::new(std::io::ErrorKind::NotFound, format!("No such device: {}", interface))
+                    }
+                    CanSocketOpenError::LookupError(nix::errno::Errno::EPERM) => {
+                        std::io::Error::new(std::io::ErrorKind::PermissionDenied, format!("Operation not permitted: {}", interface))
+                    }
+                    CanSocketOpenError::LookupError(nix::errno::Errno::EACCES) => {
+                        std::io::Error::new(std::io::ErrorKind::PermissionDenied, format!("Permission denied: {}", interface))
+                    }
+                    CanSocketOpenError::LookupError(nix::errno::Errno::EBUSY) => {
+                        std::io::Error::new(std::io::ErrorKind::Other, format!("Device or resource busy: {}", interface))
+                    }
+                    _ => {
+                        std::io::Error::new(std::io::ErrorKind::Other, format!("Error opening socket: {}", e))
+                    }
+                }
+            }) {
+                Ok(s) => {
+                    // Set the atomicbool to True
+                    socket_opened_clone.store(true, std::sync::atomic::Ordering::Relaxed);
+                    s
                 },
-                _ => std::io::Error::new(std::io::ErrorKind::Other, e),
-            }).unwrap();
+                Err(e) => {
+                    // If the socket fails to open, we will print the error 
+                    error!("{}",e.to_string());
+                    // Set the socket error atomicbool to True
+                    socket_error_clone.store(true, std::sync::atomic::Ordering::Relaxed);
+                    return Err(e);
+                }
+            };
 
             // Spin thread is actually two threads in one - the receive thread, and the send thread.
             // Each thread has its own loop, which is broken when the socket is closed.
@@ -136,12 +162,12 @@ impl JBus {
 
             // IF the filters list is not empty, set the filters on the socket
             if !filters.is_empty() {
-                socket.filter_drop_all().unwrap();
-                socket.set_filters(&filters).unwrap();
+                socket.filter_drop_all()?;
+                socket.set_filters(&filters)?;
             }
 
             // Set the socket to blocking operation (reduces CPU usage caused by polling)
-            socket.set_nonblocking(false).unwrap();
+            socket.set_nonblocking(false)?;
 
             // Wrap socket in Arc
             let socket = Arc::new(socket);
@@ -161,15 +187,50 @@ impl JBus {
                         Ok(frame) => {
                             // Convert the CanFrame to a JFrame using into
                             let frame: ffi::JFrame = frame.into();
+
                             // Send the frame to the channel
-                            tx.send(frame).unwrap();
+                            match tx.send(frame) {
+                                Ok(_) => {
+                                    // All good!
+                                    debug!("jcan_recv_thread queued a frame");
+                                }
+                                Err(e) => {
+                                    // This error can only occur if there are no receivers
+                                    // If this happens, the main thread has closed, and we should also close
+                                    error!("jcan_recv_thread failed to queue frame: {}",e);
+                                    break;
+                                }
+                            }
                         }
                         Err(e) => {
-                            // If the error is a WouldBlock, we can ignore it
-                            // If its any other error, we close the thread
-                            if e.kind() != std::io::ErrorKind::WouldBlock {
-                                // Break
-                                break;
+                            // If the error is not one of
+                            // - WouldBlock - The socket is non-blocking, and there are no frames to read
+                            // - Error 105 - buffer overflow
+                            // Then we will break the loop, and close the thread. 
+                            // Otherwise, we will just log the error in a nicely formatted way
+
+                            match e.kind() {
+                                std::io::ErrorKind::WouldBlock => {
+                                    // Do nothing, repeat loop
+                                }
+                                std::io::ErrorKind::Other => {
+                                    match e.raw_os_error() {
+                                        Some(105) => {
+                                            // Log a warning that our buffer overflowed, but continue
+                                            warn!("jcan_recv_thread ignored an error: {}",e);
+                                        }
+                                        _ => {
+                                            // Break
+                                            error!("jcan_recv_thread encountered an error: {}",e);
+                                            break;
+                                        }
+                                    }
+                                }
+                                _ => {
+                                    // Any other error, break
+                                    error!("jcan_recv_thread encountered an error: {}",e);
+                                    break;
+                                }
                             }
                         }
                     }
@@ -185,11 +246,41 @@ impl JBus {
                             // Convert the JFrame to a CanFrame using into
                             let frame: CanFrame = frame.into();
                             // Write the frame to the socket
-                            socket_send.write_frame(&frame).unwrap();
+                            match socket_send.write_frame(&frame) {
+                                Ok(_) => {
+                                    // All good!
+                                    debug!("jcan_send_thread sent frame: {:?}",frame);
+                                }
+                                Err(e) => {
+                                    // We failed to send this frame via the socket
+                                    // There are a few errors that we wish to safely ignore here
+                                    // Starting with Error 105, which is a buffer overflow
+                                    match e.kind() {
+                                        std::io::ErrorKind::Other => {
+                                            match e.raw_os_error() {
+                                                Some(105) => {
+                                                    // Log a warning that our buffer overflowed, but continue
+                                                    warn!("jcan_send_thread ignored an error: {}",e);
+                                                }
+                                                _ => {
+                                                    // Break
+                                                    error!("jcan_send_thread encountered an error: {}",e);
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        _ => {
+                                            // Any other error, break
+                                            error!("jcan_send_thread encountered an error: {}",e);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
                         }
                         // Any error probably means the channel has been closed, so we close the thread
                         Err(_) => {
-                            // Break
+                            debug!("jcan_send_thread closed due to sendrx error");
                             break;
                         }
                     }
@@ -204,7 +295,24 @@ impl JBus {
             Ok(())
         })?);
 
-        Ok(())
+        // Check if spin_handle is finished - this would indicate a thread abort
+        debug!("spin_handle: {:?}",self.spin_handle.as_ref().unwrap());
+
+        // Wait until either the socket opened is True, or the socket error is True
+        while !socket_opened.load(Ordering::Relaxed) && !socket_error.load(Ordering::Relaxed) {
+            // Sleep for 1ms
+            debug!("Waiting for socket_open or socket_error to be true");
+            thread::sleep(Duration::from_millis(10));
+        }
+
+        // Check if the socket opened
+        if socket_opened.load(Ordering::Relaxed) {
+            // Ok
+            Ok(())
+        } else {
+            // Error
+            Err(std::io::Error::new(std::io::ErrorKind::Other,"Error opening bus",))
+        }
     }
 
     // Check if the thread_handle is not empty.
@@ -220,7 +328,7 @@ impl JBus {
         if !self.is_open() {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::Other,
-                "Bus not open",
+                "Cannot receive, bus has not been opened",
             ));
         }
 
@@ -238,7 +346,7 @@ impl JBus {
         if !self.is_open() {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::Other,
-                "Bus not open",
+                "Cannot send, bus has not been opened",
             ));
         }
 
@@ -381,15 +489,6 @@ impl ffi::JFrame {
 
     // .data setter
     pub fn set_data(&mut self, data: Vec<u8>) -> Result<(), std::io::Error> {
-        // Check if data is empty (zero length)
-        if data.len() == 0 {
-            // Print error message that shows N = 0 bytes
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "Data length cannot be 0 bytes",
-            ));
-        }
-
         // Check if data is too long
         if data.len() > 8 {
             // Print error message that shows N > 8 bytes
