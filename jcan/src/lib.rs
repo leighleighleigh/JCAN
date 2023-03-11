@@ -2,13 +2,12 @@ extern crate socketcan;
 
 use log::{debug, error, warn};
 use embedded_can::{ExtendedId, Frame as EmbeddedFrame, Id, StandardId};
-use nix::sys::signal::Signal::SIGABRT;
-use nix::sys::signal::raise;
 use socketcan::{CanFilter, CanFrame, CanSocket, Socket, CanSocketOpenError};
 use std::sync::mpsc;
 use std::sync::Arc;
+use std::sync::atomic::Ordering;
 use std::thread;
-use std::thread::JoinHandle;
+use std::time::Duration;
 
 #[cxx::bridge(namespace = "org::jcan")]
 pub mod ffi {
@@ -101,6 +100,17 @@ impl JBus {
         let filters = self.filters.clone();
         // Clone the tx channel
         let tx = self.spin_recv_tx.clone().unwrap();
+        
+        // We will create a Mutex aroud a bool, so we can check if the socket is open
+        // The mutex is important because the operation is happening in a new thread - so the main thread
+        // needs to wait until the mutex lock is released.
+        let socket_opened = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let socket_error = Arc::new(std::sync::atomic::AtomicBool::new(false));
+
+        // Clone the socket_opened mutex
+        let socket_opened_clone = socket_opened.clone();
+        // Clone the socket_error mutex
+        let socket_error_clone = socket_error.clone();
 
         // Create a thread
         self.spin_handle = Some(thread::Builder::new().name("jcan_spin_thread".to_string()).spawn(move || {
@@ -110,44 +120,36 @@ impl JBus {
             // LookupError(EPERM) - Operation not permitted
             // LookupError(EACCES) - Permission denied
             // LookupError(EBUSY) - Device or resource busy
-            let socket = match CanSocket::open(&interface)
-            {
-                Ok(s) => s,
-                Err(e) => match e {
-                    CanSocketOpenError::LookupError(e) => match e {
-                        nix::errno::Errno::ENODEV => 
-                        {
-                            error!("No such device: {}", interface);
-                            raise(SIGABRT);
-                            return Err(std::io::Error::new(std::io::ErrorKind::NotFound, format!("No such device: {}", interface)))
-                        },
-                        nix::errno::Errno::EPERM => {
-                            error!("Permission denied: {}", interface);
-                            raise(SIGABRT);
-                            return Err(std::io::Error::new(std::io::ErrorKind::PermissionDenied,format!("Permission denied: {}", interface),))
-                        },
-                        nix::errno::Errno::EACCES => {
-                            error!("Permission denied: {}", interface);
-                            raise(SIGABRT);
-                            return Err(std::io::Error::new(std::io::ErrorKind::PermissionDenied,format!("Permission denied: {}", interface),))
-                        },
-                        nix::errno::Errno::EBUSY => {
-                            error!("Device busy: {}", interface);
-                            raise(SIGABRT);
-                            return Err(std::io::Error::new(std::io::ErrorKind::Other,format!("Device busy: {}", interface),))
-                        },
-                        _ => {
-                            error!("Error opening socket: {}", e);
-                            raise(SIGABRT);
-                            return Err(std::io::Error::new(std::io::ErrorKind::Other, e))
-                        },
-                    },
-                    _ => 
-                    {
-                        error!("Error opening socket: {}", e);
-                        raise(SIGABRT);
-                        return Err(std::io::Error::new(std::io::ErrorKind::Other, e))
-                    },
+            let socket = match CanSocket::open(&interface).map_err(|e| {
+                match e {
+                    CanSocketOpenError::LookupError(nix::errno::Errno::ENODEV) => {
+                        std::io::Error::new(std::io::ErrorKind::NotFound, format!("No such device: {}", interface))
+                    }
+                    CanSocketOpenError::LookupError(nix::errno::Errno::EPERM) => {
+                        std::io::Error::new(std::io::ErrorKind::PermissionDenied, format!("Operation not permitted: {}", interface))
+                    }
+                    CanSocketOpenError::LookupError(nix::errno::Errno::EACCES) => {
+                        std::io::Error::new(std::io::ErrorKind::PermissionDenied, format!("Permission denied: {}", interface))
+                    }
+                    CanSocketOpenError::LookupError(nix::errno::Errno::EBUSY) => {
+                        std::io::Error::new(std::io::ErrorKind::Other, format!("Device or resource busy: {}", interface))
+                    }
+                    _ => {
+                        std::io::Error::new(std::io::ErrorKind::Other, format!("Error opening socket: {}", e))
+                    }
+                }
+            }) {
+                Ok(s) => {
+                    // Set the atomicbool to True
+                    socket_opened_clone.store(true, std::sync::atomic::Ordering::Relaxed);
+                    s
+                },
+                Err(e) => {
+                    // If the socket fails to open, we will print the error 
+                    error!("{}",e.to_string());
+                    // Set the socket error atomicbool to True
+                    socket_error_clone.store(true, std::sync::atomic::Ordering::Relaxed);
+                    return Err(e);
                 }
             };
 
@@ -160,12 +162,12 @@ impl JBus {
 
             // IF the filters list is not empty, set the filters on the socket
             if !filters.is_empty() {
-                socket.filter_drop_all().unwrap();
-                socket.set_filters(&filters).unwrap();
+                socket.filter_drop_all()?;
+                socket.set_filters(&filters)?;
             }
 
             // Set the socket to blocking operation (reduces CPU usage caused by polling)
-            socket.set_nonblocking(false).unwrap();
+            socket.set_nonblocking(false)?;
 
             // Wrap socket in Arc
             let socket = Arc::new(socket);
@@ -293,10 +295,27 @@ impl JBus {
             Ok(())
         })?);
 
-        // Check if spin_handle is not empty
-        debug!("spin_handle finished: {:?}",self.spin_handle.as_ref().unwrap().is_finished());
+        // Check if spin_handle is finished - this would indicate a thread abort
+        debug!("spin_handle: {:?}",self.spin_handle.as_ref().unwrap());
 
-        Ok(())
+        // Wait until either the socket opened is True, or the socket error is True
+        while !socket_opened.load(Ordering::Relaxed) && !socket_error.load(Ordering::Relaxed) {
+            // Sleep for 1ms
+            debug!("Waiting for socket_open or socket_error to be true");
+            thread::sleep(Duration::from_millis(10));
+        }
+
+        // Check if the socket opened
+        if socket_opened.load(Ordering::Relaxed) {
+            // Ok
+            Ok(())
+        } else {
+            // Error
+            Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "Socket error",
+            ))
+        }
     }
 
     // Check if the thread_handle is not empty.

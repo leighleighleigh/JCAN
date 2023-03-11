@@ -2,7 +2,7 @@
 import jcan
 import time
 
-channel = 'vcan1'
+channel = 'vcan0'
 
 bus = jcan.Bus()
 bus.open(channel)
