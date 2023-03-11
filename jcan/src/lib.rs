@@ -75,8 +75,6 @@ pub struct JBus {
 impl JBus {
     // Opens with the socket opened in a background thread - the spin thread
     pub fn open(&mut self, interface: String, tx_queue_size: u16, rx_queue_size: u16) -> Result<(), std::io::Error> {
-        env_logger::init();
-
         // Check if already open
         if self.is_open() {
             return Err(std::io::Error::new(

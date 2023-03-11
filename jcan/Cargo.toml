@@ -1,6 +1,6 @@
 [package]
 name = "jcan"
-version = "0.1.6"
+version = "0.1.7"
 edition = "2021"
 publish = false
 links = "jcan"
@@ -26,7 +26,6 @@ nix = "0.26"
 serial_test = "0.9"
 socketcan = { git = "https://github.com/socketcan-rs/socketcan-rs", version = "2.0.0-pre.0" }
 cxx = "1.0"
-env_logger = "0.10.0"
 log = "0.4.17"
 
 [build-dependencies]
