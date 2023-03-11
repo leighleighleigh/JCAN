@@ -19,8 +19,15 @@ if __name__ == "__main__":
         print(f"FRAME 1AD {frame.data}")
         # print(frame.data[0])
 
+    def on_anyother_frame(frame: jcan.Frame):
+        print(f"FRAME {frame.id}: {frame.data}")
+
     bus.add_callback(0x1A5, on_frame_five)
     bus.add_callback(0x1AD, on_frame_d)
+
+    # The add_callback for ID zero will be called when any other frame is received,
+    # as long as that frame does not have a callback associated with it.
+    bus.add_callback(0x0, on_anyother_frame)
 
     bus.open("vcan0")
 
