@@ -489,15 +489,6 @@ impl ffi::JFrame {
 
     // .data setter
     pub fn set_data(&mut self, data: Vec<u8>) -> Result<(), std::io::Error> {
-        // Check if data is empty (zero length)
-        if data.len() == 0 {
-            // Print error message that shows N = 0 bytes
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "Data length cannot be 0 bytes",
-            ));
-        }
-
         // Check if data is too long
         if data.len() > 8 {
             // Print error message that shows N > 8 bytes
