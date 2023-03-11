@@ -29,7 +29,7 @@ pub mod ffi {
         fn set_id_filter(self: &mut JBus, allowed: Vec<u32>) -> Result<()>;
         fn set_id_filter_mask(self: &mut JBus, allowed: u32, allowed_mask: u32) -> Result<()>;
 
-        fn open(self: &mut JBus, interface: String) -> Result<()>;
+        fn open(self: &mut JBus, interface: String, tx_queue_len: u16, rx_queue_len: u16) -> Result<()>;
         fn is_open(self: &JBus) -> bool;
 
         fn receive_from_thread_buffer(self: &mut JBus) -> Result<Vec<JFrame>>;
@@ -61,11 +61,11 @@ pub struct JBus {
 
     // Setup a MPSC channel which is consumed by the main thread calling bus.spin()
     // The spin_handle is the producer for this channel.
-    spin_recv_tx: Option<mpsc::Sender<ffi::JFrame>>,
+    spin_recv_tx: Option<mpsc::SyncSender<ffi::JFrame>>,
     spin_recv_rx: Option<mpsc::Receiver<ffi::JFrame>>,
 
     // Setup a MPSC channel which is consumed by the spin thread, sending frames onto the socket.
-    spin_send_tx: Option<mpsc::Sender<ffi::JFrame>>,
+    spin_send_tx: Option<mpsc::SyncSender<ffi::JFrame>>,
 
     // The threads are stored in a vector, so they can be joined when the bus is dropped
     spin_handle: Option<thread::JoinHandle<Result<(), std::io::Error>>>,
@@ -74,7 +74,7 @@ pub struct JBus {
 // Implements JBus methods
 impl JBus {
     // Opens with the socket opened in a background thread - the spin thread
-    pub fn open(&mut self, interface: String) -> Result<(), std::io::Error> {
+    pub fn open(&mut self, interface: String, tx_queue_size: u16, rx_queue_size: u16) -> Result<(), std::io::Error> {
         env_logger::init();
 
         // Check if already open
@@ -86,13 +86,13 @@ impl JBus {
         }
 
         // Create a channel to handle received (inbound) frames
-        let (tx, rx) = mpsc::channel();
+        let (tx, rx) = mpsc::sync_channel(rx_queue_size.into());
         // Store chanel variables
         self.spin_recv_tx = Some(tx);
         self.spin_recv_rx = Some(rx);
 
         // Create a channel to handle sent (outbound) frames
-        let (sendtx, sendrx) = mpsc::channel();
+        let (sendtx, sendrx) = mpsc::sync_channel(tx_queue_size.into());
         // Store channel variables
         self.spin_send_tx = Some(sendtx);
 

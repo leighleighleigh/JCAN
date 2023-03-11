@@ -27,7 +27,7 @@ fn main()
     // bus.on_receive_id(0x123, FrameCallback(on_special_frame)).expect("Failed to register callback.");
 
     // Open the bus in async mode
-    bus.open("vcan0".to_string()).expect("Failed to open bus.");
+    bus.open("vcan0".to_string(),256,256).expect("Failed to open bus.");
 
 
     loop {

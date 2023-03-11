@@ -50,8 +50,10 @@ impl PyJBus {
     }
 
     // Implement the open method for the PyJBus
-    fn open(&mut self, interface: String) -> PyResult<()> {
-        self.bus.open(interface).map_err(|e| {
+    // Add pyo3 default arguments of 256 for tx_queue_len and rx_queue_len
+    #[args(tx_queue_len = 256, rx_queue_len = 256)]
+    fn open(&mut self, interface: String, tx_queue_len: u16, rx_queue_len: u16) -> PyResult<()> {
+        self.bus.open(interface, tx_queue_len, rx_queue_len).map_err(|e| {
             PyOSError::new_err(format!("{}", e))
         })?;
         Ok(())
@@ -133,10 +135,16 @@ impl PyJBus {
         let _gil = Python::with_gil(|py| {
             for frame in frames {
                 // Lookup the callback function for the frame, given its ID
-                // If no callback is found, ignore the frame
+                // If no callback is found, check if we have an 'any' callback (ID of 0) assigned,
+                // otherwise ignore the frame.
                 let callback = match self.callbacks.get(&frame.frame.id) {
                     Some(c) => c,
-                    None => continue,
+                    None => {
+                        match self.callbacks.get(&0) {
+                            Some(c) => c,
+                            None => continue,
+                        }
+                    },
                 };
 
                 // Call the callback function with the frame as an argument
