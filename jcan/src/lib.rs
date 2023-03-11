@@ -311,10 +311,7 @@ impl JBus {
             Ok(())
         } else {
             // Error
-            Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "Socket error",
-            ))
+            Err(std::io::Error::new(std::io::ErrorKind::Other,"Error opening bus",))
         }
     }
 
@@ -331,7 +328,7 @@ impl JBus {
         if !self.is_open() {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::Other,
-                "Bus not open",
+                "Cannot receive, bus has not been opened",
             ));
         }
 
@@ -349,7 +346,7 @@ impl JBus {
         if !self.is_open() {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::Other,
-                "Bus not open",
+                "Cannot send, bus has not been opened",
             ));
         }
 
