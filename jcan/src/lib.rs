@@ -195,8 +195,7 @@ impl JBus {
                                 Err(e) => {
                                     // This error can only occur if there are no receivers
                                     // If this happens, the main thread has closed, and we should also close
-                                    error!("jcan_recv_thread failed to queue frame: {}",e);
-                                    break;
+                                    warn!("jcan_recv_thread failed to queue frame: {}",e);
                                 }
                             }
                         }
@@ -210,24 +209,10 @@ impl JBus {
                             match e.kind() {
                                 std::io::ErrorKind::WouldBlock => {
                                     // Do nothing, repeat loop
-                                }
-                                std::io::ErrorKind::Other => {
-                                    match e.raw_os_error() {
-                                        Some(105) => {
-                                            // Log a warning that our buffer overflowed, but continue
-                                            warn!("jcan_recv_thread ignored an error: {}",e);
-                                        }
-                                        _ => {
-                                            // Break
-                                            error!("jcan_recv_thread encountered an error: {}",e);
-                                            break;
-                                        }
-                                    }
-                                }
+                                },
                                 _ => {
                                     // Any other error, break
-                                    error!("jcan_recv_thread encountered an error: {}",e);
-                                    break;
+                                    warn!("jcan_recv_thread ignored an error: {:?}",e);
                                 }
                             }
                         }
@@ -250,36 +235,13 @@ impl JBus {
                                     debug!("jcan_send_thread sent frame: {:?}",frame);
                                 }
                                 Err(e) => {
-                                    // We failed to send this frame via the socket
-                                    // There are a few errors that we wish to safely ignore here
-                                    // Starting with Error 105, which is a buffer overflow
-                                    match e.kind() {
-                                        std::io::ErrorKind::Other => {
-                                            match e.raw_os_error() {
-                                                Some(105) => {
-                                                    // Log a warning that our buffer overflowed, but continue
-                                                    warn!("jcan_send_thread ignored an error: {}",e);
-                                                }
-                                                _ => {
-                                                    // Break
-                                                    error!("jcan_send_thread encountered an error: {}",e);
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        _ => {
-                                            // Any other error, break
-                                            error!("jcan_send_thread encountered an error: {}",e);
-                                            break;
-                                        }
-                                    }
+                                    warn!("jcan_send_thread ignored an error when writing CAN frame: {:?}",e);
                                 }
                             }
                         }
                         // Any error probably means the channel has been closed, so we close the thread
-                        Err(_) => {
-                            debug!("jcan_send_thread closed due to sendrx error");
-                            break;
+                        Err(e) => {
+                            warn!("jcan_send_thread ignored a recv() error on it's MPSC queue: {:?}", e);
                         }
                     }
                 }
@@ -350,11 +312,12 @@ impl JBus {
 
         // Make clone of the channel
         let tx = self.spin_send_tx.clone().unwrap();
-        // Send the frame
+
+        // Send the frame - this will BLOCK until the frame is sent onto the internal queue.
+        // An error is ONLY raised if the reciever has been dropped. 
+        // When this happens, we print a message saying that the thread has been closed.
         Ok(tx
-            .send(frame)
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))
-            .unwrap())
+            .send(frame).expect("jcan_send_thread has been closed".to_owned().as_str()))
     }
 
     // Set the list of IDs that will be received
