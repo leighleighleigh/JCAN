@@ -1,6 +1,6 @@
 [package]
 name = "jcan"
-version = "0.1.8"
+version = "0.1.9"
 edition = "2021"
 publish = false
 links = "jcan"
@@ -31,4 +31,6 @@ log = "0.4.17"
 [build-dependencies]
 cxx-build = "1.0"
 cc = "1.0.78"
+cargo-get = "0.3.3"
+cargo-edit = "0.11.9"
 
