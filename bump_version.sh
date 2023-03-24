@@ -31,3 +31,21 @@ else
     cargo set-version --dry-run --package jcan_python --bump patch
 fi
 
+# Ask if you'd like to update the git tag
+CURRENTVERSION=$(cargo pkgid jcan | cut -d# -f2)
+# Pre-pend 'v' to the version
+CURRENTVERSION="v$CURRENTVERSION"
+
+TAGVERSION=$(git tag -l | tail -n1)
+# Show the old and new version, ask if you'd like to update the git tag
+echo "Current version: $CURRENTVERSION"
+echo "Tag version: $TAGVERSION"
+read -p "Update git tag to current version? [y/N] " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]
+then
+    # Update the git tag, with a message
+    git tag -a $CURRENTVERSION -m "v$CURRENTVERSION"
+fi
+
+

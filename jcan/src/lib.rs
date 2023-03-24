@@ -210,6 +210,10 @@ impl JBus {
                                 std::io::ErrorKind::WouldBlock => {
                                     // Do nothing, repeat loop
                                 },
+                                // If the socket is closed, break the loop
+                                std::io::ErrorKind::ConnectionReset => {
+                                    panic!("jcan_recv_thread closed, socket reset");
+                                },
                                 _ => {
                                     // Any other error, break
                                     warn!("jcan_recv_thread ignored an error: {:?}",e);
@@ -235,7 +239,18 @@ impl JBus {
                                     debug!("jcan_send_thread sent frame: {:?}",frame);
                                 }
                                 Err(e) => {
-                                    warn!("jcan_send_thread ignored an error when writing CAN frame: {:?}",e);
+                                    // If the error states that the socket closed
+                                    // Then we will break the loop, and close the thread.
+                                    // Otherwise, we will just log the error in a nicely formatted way
+                                    match e.kind() {
+                                        std::io::ErrorKind::ConnectionReset => {
+                                            panic!("jcan_send_thread closed, socket reset");
+                                        },
+                                        _ => {
+                                            // Any other error, break
+                                            warn!("jcan_send_thread ignored an error when writing CAN frame: {:?}",e);
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -403,6 +418,9 @@ impl JBus {
 // Builder for JBus, used to create C++ instances of the opaque JBus type
 // Takes in a String interface
 pub fn new_jbus() -> Result<Box<JBus>, std::io::Error> {
+    // Initialise env logger
+    env_logger::init();
+
     // Create a new JBus
     let jbus = JBus {
         filters: Vec::new(),

@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <vector>
 #include "jcan/jcan.h"
-
+#include <unistd.h>
 using namespace org::jcan;
 
 /* 
@@ -46,6 +46,12 @@ int main(int argc, char **argv) {
 
     // Run forever
     while (1) {
+        // Send a frame every 1 second
+        Frame frameToSend = new_frame(0x200, {1,2,3,4,5,6,7,8});
+        printf("Sending: %s...\n",frameToSend.to_string().c_str());
+        bus->send(frameToSend);
+        sleep(1);
+        printf("Spinning...\n");
         bus->spin();
     }
 

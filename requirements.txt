@@ -13,3 +13,4 @@ tomli==2.0.1
 typing_extensions==4.4.0
 wrapt==1.14.1
 toml==0.10.2
+wheel==0.40.0
