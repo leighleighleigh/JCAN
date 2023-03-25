@@ -23,6 +23,7 @@ int main(int argc, char **argv) {
     // The format used below, of the form 'base_id + part of ID we don't care about',
     // is a nice simple way to use this feature.
     bus->set_id_filter_mask(0x1A0,0xFF0);
+    printf("Filter set to 0x1A0 : 0xFF0\n");
 
     // Open the bus
     bus->open("vcan0");
@@ -37,7 +38,7 @@ int main(int argc, char **argv) {
         printf("Sending: %s...\n",frameToSend.to_string().c_str());
         bus->send(frameToSend);
 
-        printf("Waiting for frame...\n");
+        printf("Waiting for frame matching filter...\n");
         Frame frameReceived = bus->receive();
         printf("Received: %s\n", frameReceived.to_string().c_str());
     }

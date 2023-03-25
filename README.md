@@ -138,14 +138,15 @@ int main(int argc, char **argv) {
 ```
 
 > **Lots more examples can be found [in the examples folder](https://github.com/leighleighleigh/JCAN/tree/main/examples)!**
+>
+> C++ examples can be built with `make`, which uses the `Makefile` in each directory to run `cmake` for you.
 
 </p>
 </details>
 
 ## Quirks / Known Bugs
- - A dedicated `scripts-postbuild` crate is used to move all the build-artifacts (`libjcan.a`, `jcan.h`, etc...) into `/out/<profile>/<target>/jcan`
  - Workspace-level `cargo build` is broken, use `crossbuild.sh` instead (as detailed below)
- - C++ examples can be built with the `build.sh` script found in each directory
+ - A dedicated `scripts-postbuild` crate is used to move all the build-artifacts (`libjcan.a`, `jcan.h`, etc...) into `/out/<profile>/<target>/jcan`
 
 ## Development
 ```bash

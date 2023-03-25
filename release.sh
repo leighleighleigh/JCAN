@@ -28,14 +28,20 @@ GIT_DESCRIBED_TAG=${GIT_DESCRIBED_TAG//-/_}
 # e.g v0.1.5
 GIT_LATEST_TAG=$(git tag -l 'v*' | tail -n1)
 
-# If the argument --latest-tag is passed, use the latest annotated tag
-# instead of the git describe tag.
-if [[ "$1" == "--latest-tag" ]];
-then
-    GIT_TAG=${GIT_LATEST_TAG}
-else
-    GIT_TAG=${GIT_DESCRIBED_TAG}
-fi
+# Prompt the user to choose between
+# - the latest git tag (GIT_LATEST_TAG)
+# - the git describe tag (GIT_DESCRIBED_TAG)
+echo "Choose a tag to use for the release:"
+echo "1) Latest git tag: ${GIT_LATEST_TAG}"
+echo "2) Git describe tag: ${GIT_DESCRIBED_TAG}"
+# Read the user's choice
+read -p "Enter 1 or 2: " choice
+# Set the GIT_TAG variable to the user's choice
+case $choice in
+    1) GIT_TAG=${GIT_LATEST_TAG} ;;
+    2) GIT_TAG=${GIT_DESCRIBED_TAG} ;;
+    *) echo "Invalid choice"; exit 1 ;;
+esac
 
 # Check the tag is not empty, else exit
 if [[ -z "${GIT_TAG}" ]];
@@ -50,10 +56,14 @@ fi
 # e.g. v0.1.5 -> 0.1.5
 GIT_TAG=${GIT_TAG#v}
 
-# Get the python package version from the setup.py file
+# Get the python package version from the jcan_python Cargo.toml
+# This requires that the setup.py is also updated with the same version number.
 # This is the version number that will be used in the wheel filename
 # e.g. jcan-0.1.5-cp38-abi3-manylinux2014_aarch64.whl 
-PYTHON_PACKAGE_VERSION=$(grep -oP '(?<=version=")[^"]*' "${SCRIPT_DIR}/jcan-python/setup.py")
+# OLD VERSION READ THE setup.py FILE
+# PYTHON_PACKAGE_VERSION=$(grep -oP '(?<=version=")[^"]*' "${SCRIPT_DIR}/jcan-python/setup.py")
+# NEW VERSION USES CARGO-GET VERSION
+PYTHON_PACKAGE_VERSION=$(cargo get --root jcan-python version)
 
 # Copy the wheel(s) to the release directory
 cp "${SCRIPT_DIR}/out/wheels/jcan-${PYTHON_PACKAGE_VERSION}-"*.whl "${SCRIPT_DIR}/release/"

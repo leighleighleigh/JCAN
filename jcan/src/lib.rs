@@ -69,6 +69,9 @@ pub struct JBus {
 
     // The threads are stored in a vector, so they can be joined when the bus is dropped
     spin_handle: Option<thread::JoinHandle<Result<(), std::io::Error>>>,
+
+    // ARC Boolean to communicate if the socket is open, or if we should close it
+    socket_opened: Arc<std::sync::atomic::AtomicBool>,
 }
 
 // Implements JBus methods
@@ -102,11 +105,10 @@ impl JBus {
         // We will create a Mutex aroud a bool, so we can check if the socket is open
         // The mutex is important because the operation is happening in a new thread - so the main thread
         // needs to wait until the mutex lock is released.
-        let socket_opened = Arc::new(std::sync::atomic::AtomicBool::new(false));
         let socket_error = Arc::new(std::sync::atomic::AtomicBool::new(false));
 
         // Clone the socket_opened mutex
-        let socket_opened_clone = socket_opened.clone();
+        let socket_opened_clone = self.socket_opened.clone();
         // Clone the socket_error mutex
         let socket_error_clone = socket_error.clone();
 
@@ -131,6 +133,9 @@ impl JBus {
                     }
                     CanSocketOpenError::LookupError(nix::errno::Errno::EBUSY) => {
                         std::io::Error::new(std::io::ErrorKind::Other, format!("Device or resource busy: {}", interface))
+                    }
+                    CanSocketOpenError::LookupError(nix::errno::Errno::ENETDOWN) => {
+                        std::io::Error::new(std::io::ErrorKind::Other, format!("Network is down: {}", interface))
                     }
                     _ => {
                         std::io::Error::new(std::io::ErrorKind::Other, format!("Error opening socket: {}", e))
@@ -190,13 +195,12 @@ impl JBus {
                             match tx.send(frame) {
                                 Ok(_) => {
                                     // All good!
-                                    debug!("jcan_recv_thread queued a frame");
+                                    debug!("jcan_recv_thread queued a frame for next spin()");
                                 }
                                 Err(e) => {
                                     // This error can only occur if there are no receivers
                                     // If this happens, the main thread has closed, and we should also close
-                                    error!("jcan_recv_thread failed to queue frame: {}",e);
-                                    break;
+                                    warn!("jcan_recv_thread failed to queue frame: {}",e);
                                 }
                             }
                         }
@@ -210,24 +214,33 @@ impl JBus {
                             match e.kind() {
                                 std::io::ErrorKind::WouldBlock => {
                                     // Do nothing, repeat loop
-                                }
-                                std::io::ErrorKind::Other => {
+                                },
+                                // Check if the error kind (of type Os error) is in the list of 
+                                // 19 (network down) or 100 (no such device)
+                                // This means the socket is closed, break the loop.
+                                // Check the os error code
+                                _ => {
                                     match e.raw_os_error() {
-                                        Some(105) => {
-                                            // Log a warning that our buffer overflowed, but continue
-                                            warn!("jcan_recv_thread ignored an error: {}",e);
-                                        }
-                                        _ => {
-                                            // Break
-                                            error!("jcan_recv_thread encountered an error: {}",e);
+                                        Some(19) => {
+                                            // Network is down
+                                            error!("jcan_recv_thread detected network down: {:?}",e);
                                             break;
                                         }
+                                        Some(6) => {
+                                            // No such device
+                                            error!("jcan_recv_thread detected no such device: {:?}",e);
+                                            break;
+                                        }
+                                        Some(100) => {
+                                            // No such device
+                                            error!("jcan_recv_thread detected no such device: {:?}",e);
+                                            break;
+                                        }
+                                        _ => {
+                                            // Any other error, break
+                                            warn!("jcan_recv_thread ignored an error: {:?}",e);
+                                        }
                                     }
-                                }
-                                _ => {
-                                    // Any other error, break
-                                    error!("jcan_recv_thread encountered an error: {}",e);
-                                    break;
                                 }
                             }
                         }
@@ -250,36 +263,36 @@ impl JBus {
                                     debug!("jcan_send_thread sent frame: {:?}",frame);
                                 }
                                 Err(e) => {
-                                    // We failed to send this frame via the socket
-                                    // There are a few errors that we wish to safely ignore here
-                                    // Starting with Error 105, which is a buffer overflow
-                                    match e.kind() {
-                                        std::io::ErrorKind::Other => {
-                                            match e.raw_os_error() {
-                                                Some(105) => {
-                                                    // Log a warning that our buffer overflowed, but continue
-                                                    warn!("jcan_send_thread ignored an error: {}",e);
-                                                }
-                                                _ => {
-                                                    // Break
-                                                    error!("jcan_send_thread encountered an error: {}",e);
-                                                    break;
-                                                }
-                                            }
+                                    // If the error states that the socket closed (OS error 19 or 100)
+                                    // Then we will break the loop, and close the thread.
+                                    // Otherwise, we will just log the error in a nicely formatted way
+                                    match e.raw_os_error() {
+                                        Some(6) => {
+                                            // Network is down
+                                            error!("jcan_send_thread detected network down: {:?}",e);
+                                            break;
+                                        }
+                                        Some(19) => {
+                                            // Network is down
+                                            error!("jcan_send_thread detected network down: {:?}",e);
+                                            break;
+                                        }
+                                        Some(100) => {
+                                            // No such device
+                                            error!("jcan_send_thread detected no such device: {:?}",e);
+                                            break;
                                         }
                                         _ => {
                                             // Any other error, break
-                                            error!("jcan_send_thread encountered an error: {}",e);
-                                            break;
+                                            warn!("jcan_send_thread ignored an error: {:?}",e);
                                         }
                                     }
                                 }
                             }
                         }
                         // Any error probably means the channel has been closed, so we close the thread
-                        Err(_) => {
-                            debug!("jcan_send_thread closed due to sendrx error");
-                            break;
+                        Err(e) => {
+                            debug!("jcan_send_thread ignored a recv() error on it's MPSC queue: {:?}", e);
                         }
                     }
                 }
@@ -297,14 +310,14 @@ impl JBus {
         debug!("spin_handle: {:?}",self.spin_handle.as_ref().unwrap());
 
         // Wait until either the socket opened is True, or the socket error is True
-        while !socket_opened.load(Ordering::Relaxed) && !socket_error.load(Ordering::Relaxed) {
+        while !self.socket_opened.load(Ordering::Relaxed) && !socket_error.load(Ordering::Relaxed) {
             // Sleep for 1ms
             debug!("Waiting for socket_open or socket_error to be true");
             thread::sleep(Duration::from_millis(10));
         }
 
         // Check if the socket opened
-        if socket_opened.load(Ordering::Relaxed) {
+        if self.socket_opened.load(Ordering::Relaxed) {
             // Ok
             Ok(())
         } else {
@@ -316,7 +329,26 @@ impl JBus {
     // Check if the thread_handle is not empty.
     // If thread_handle is not empty, we assumed we have been opened
     pub fn is_open(&self) -> bool {
-        self.spin_handle.is_some()
+        self.spin_handle.is_some() && self.socket_opened.load(Ordering::Relaxed)
+    }
+
+    // Close the bus
+    pub fn close(&mut self) -> Result<(), std::io::Error> {
+        // Check if we are open
+        if !self.is_open() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "Cannot close, bus has not been opened",
+            ));
+        }
+
+        // Get socket_opened arc
+        let socket_opened = self.socket_opened.clone();
+        // Set socket_opened to false
+        socket_opened.store(false, Ordering::Relaxed);
+
+        // Ok
+        Ok(())
     }
 
     // Blocks until a frame is received. Behind the scenes, uses a channel to receive frames via spin thread.
@@ -350,11 +382,26 @@ impl JBus {
 
         // Make clone of the channel
         let tx = self.spin_send_tx.clone().unwrap();
+
+        // Send the frame - this will BLOCK until the frame is sent onto the internal queue.
+        // An error is ONLY raised if the reciever has been dropped. 
+
         // Send the frame
-        Ok(tx
-            .send(frame)
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))
-            .unwrap())
+        match tx.send(frame) {
+            Ok(_) => {
+                // All good!
+                debug!("queued outgiong frame for transmission");
+                Ok(())
+            }
+            Err(e) => {
+                // Error message
+                error!("send error, jcan_send_thread crashed: {:?}",e);
+                // Close the bus so that the other methods stop doing tstuff
+                // This is done by the close method
+                self.close()?;
+                Ok(())
+            }
+        }
     }
 
     // Set the list of IDs that will be received
@@ -440,6 +487,10 @@ impl JBus {
 // Builder for JBus, used to create C++ instances of the opaque JBus type
 // Takes in a String interface
 pub fn new_jbus() -> Result<Box<JBus>, std::io::Error> {
+    // Initialise env logger
+    // env_logger::init();
+    env_logger::builder().filter_level(log::LevelFilter::Warn).init();
+
     // Create a new JBus
     let jbus = JBus {
         filters: Vec::new(),
@@ -448,6 +499,7 @@ pub fn new_jbus() -> Result<Box<JBus>, std::io::Error> {
         spin_recv_tx: None,
         spin_recv_rx: None,
         spin_send_tx: None,
+        socket_opened: Arc::new(std::sync::atomic::AtomicBool::new(false)),
     };
 
     // Return the JBus

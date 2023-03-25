@@ -65,5 +65,35 @@ then
     fi
 fi
 
+# Install the crates cargo-edit, cargo-get
+if ! command -v cargo set-version &> /dev/null
+then
+    echo "cargo-edit could not be found"
+    # Prompt with y/N to install cargo-edit
+    read -p "Install cargo-edit? [y/N] " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]
+    then
+        cargo install cargo-edit
+    else
+        echo "cargo-edit not installed, exiting"
+        exit 1
+    fi
+fi
+
+if ! command -v cargo get &> /dev/null
+then
+    echo "cargo-get could not be found"
+    # Prompt with y/N to install cargo-get
+    read -p "Install cargo-get? [y/N] " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]
+    then
+        cargo install cargo-get
+    else
+        echo "cargo-get not installed, exiting"
+        exit 1
+    fi
+fi
 
 

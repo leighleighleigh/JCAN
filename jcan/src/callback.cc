@@ -14,7 +14,7 @@ namespace org::jcan
 
    void Bus::open(const char *name) {
       // Default queue lengths
-      this->jBus->open(name, 256, 256);
+      this->jBus->open(name, 2, 256);
    }
 
    void Bus::open(const char *name, uint16_t tx_queue_len, uint16_t rx_queue_len) {
