@@ -488,8 +488,9 @@ impl JBus {
 // Takes in a String interface
 pub fn new_jbus() -> Result<Box<JBus>, std::io::Error> {
     // Initialise env logger
-    // env_logger::init();
-    env_logger::builder().filter_level(log::LevelFilter::Warn).init();
+    env_logger::init();
+    // Dont do this, it crashes
+    // env_logger::builder().filter_level(log::LevelFilter::Warn).init();
 
     // Create a new JBus
     let jbus = JBus {
