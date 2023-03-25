@@ -50,8 +50,8 @@ impl PyJBus {
     }
 
     // Implement the open method for the PyJBus
-    // Add pyo3 default arguments of 256 for tx_queue_len and rx_queue_len
-    #[args(tx_queue_len = 256, rx_queue_len = 256)]
+    // Add pyo3 default arguments of 8 for tx_queue_len and 512 rx_queue_len
+    #[args(tx_queue_len = 2, rx_queue_len = 256)]
     fn open(&mut self, interface: String, tx_queue_len: u16, rx_queue_len: u16) -> PyResult<()> {
         self.bus.open(interface, tx_queue_len, rx_queue_len).map_err(|e| {
             PyOSError::new_err(format!("{}", e))
