@@ -487,10 +487,14 @@ impl JBus {
 // Builder for JBus, used to create C++ instances of the opaque JBus type
 // Takes in a String interface
 pub fn new_jbus() -> Result<Box<JBus>, std::io::Error> {
-    // Initialise env logger
-    env_logger::init();
-    // Dont do this, it crashes
-    // env_logger::builder().filter_level(log::LevelFilter::Warn).init();
+    // Initialise the logger, if it hasn't already been initialised
+    // This is done by the first call to new_jbus()
+    match env_logger::builder().filter_level(log::LevelFilter::Warn).try_init() {
+        Ok(_) => {}
+        Err(_) => {
+            warn!("env_logger already initialised");
+        }
+    }
 
     // Create a new JBus
     let jbus = JBus {

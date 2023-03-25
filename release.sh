@@ -11,50 +11,8 @@ rm -rf "${SCRIPT_DIR}/release"
 # Then create it
 mkdir "${SCRIPT_DIR}/release"
 
-# Ask git to describe the current tag
-# This will be the latest annotated tag (such as v0.1.6)
-# Or it will be a combination of tag+commit-hash 
-# if the current commit is not tagged. (such as v0.1.6-1-gf3c5c5c)
-# If the working tree is dirty (uncommited changes), it will append -dirty
-# to the end of the tag. This ensures the build artifacts are clearly labelled.
-GIT_DESCRIBED_TAG=$(git describe --tags --match 'v*' --dirty)
-
-# Since python wheels use the hyphen '-' to separate the version number, we need to 
-# replace the GIT_DESCRIBED_TAG hypens with underscores
-# e.g. v0.1.6-1-gf3c5c5c -> v0.1.6_1_gf3c5c5c
-GIT_DESCRIBED_TAG=${GIT_DESCRIBED_TAG//-/_}
-
-# Get the latest annotated tag that starts with 'v'
-# e.g v0.1.5
-GIT_LATEST_TAG=$(git tag -l 'v*' | tail -n1)
-
-# Prompt the user to choose between
-# - the latest git tag (GIT_LATEST_TAG)
-# - the git describe tag (GIT_DESCRIBED_TAG)
-echo "Choose a tag to use for the release:"
-echo "1) Latest git tag: ${GIT_LATEST_TAG}"
-echo "2) Git describe tag: ${GIT_DESCRIBED_TAG}"
-# Read the user's choice
-read -p "Enter 1 or 2: " choice
-# Set the GIT_TAG variable to the user's choice
-case $choice in
-    1) GIT_TAG=${GIT_LATEST_TAG} ;;
-    2) GIT_TAG=${GIT_DESCRIBED_TAG} ;;
-    *) echo "Invalid choice"; exit 1 ;;
-esac
-
-# Check the tag is not empty, else exit
-if [[ -z "${GIT_TAG}" ]];
-then
-    echo "Error: Could not get git tag"
-    exit 1
-else
-    echo "Release tag: ${GIT_TAG}"
-fi
-
-# Remove leading 'v' from the GIT_TAG
-# e.g. v0.1.5 -> 0.1.5
-GIT_TAG=${GIT_TAG#v}
+# Used to use git tags for version, but now just use cargo version
+GIT_TAG=$(cargo get --root jcan version)
 
 # Get the python package version from the jcan_python Cargo.toml
 # This requires that the setup.py is also updated with the same version number.
