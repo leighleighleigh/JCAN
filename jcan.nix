@@ -7,7 +7,7 @@ rustPlatform.buildRustPackage {
 
   src = lib.cleanSource ./.;
 
-  cargoHash = "sha256-clm96oC4hjrMCjPmyEip1114F2eq+FhWNHC3Ndmzl1E=";
+  cargoLock.lockFile = ./Cargo.lock;
 
   buildAndTestSubdir = "jcan";
 
