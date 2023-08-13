@@ -13,7 +13,7 @@ crate-type = ["staticlib", "rlib"]
 [dependencies]
 embedded-can = "0.4"
 nix = "0.26"
-socketcan = { git = "https://github.com/socketcan-rs/socketcan-rs", version = "2.0.0-pre.0" }
+socketcan = "2.0.0"
 cxx = "1.0"
 log = "0.4.17"
 env_logger = "0.10.0"
