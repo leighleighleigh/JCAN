@@ -2,7 +2,7 @@ extern crate socketcan;
 
 use log::{debug, error, warn};
 use embedded_can::{ExtendedId, Frame as EmbeddedFrame, Id, StandardId};
-use socketcan::{CanFilter, CanFrame, CanSocket, Socket, CanSocketOpenError};
+use socketcan::{CanFilter, CanFrame, CanSocket, Socket};
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
@@ -120,28 +120,7 @@ impl JBus {
             // LookupError(EPERM) - Operation not permitted
             // LookupError(EACCES) - Permission denied
             // LookupError(EBUSY) - Device or resource busy
-            let socket = match CanSocket::open(&interface).map_err(|e| {
-                match e {
-                    CanSocketOpenError::LookupError(nix::errno::Errno::ENODEV) => {
-                        std::io::Error::new(std::io::ErrorKind::NotFound, format!("No such device: {}", interface))
-                    }
-                    CanSocketOpenError::LookupError(nix::errno::Errno::EPERM) => {
-                        std::io::Error::new(std::io::ErrorKind::PermissionDenied, format!("Operation not permitted: {}", interface))
-                    }
-                    CanSocketOpenError::LookupError(nix::errno::Errno::EACCES) => {
-                        std::io::Error::new(std::io::ErrorKind::PermissionDenied, format!("Permission denied: {}", interface))
-                    }
-                    CanSocketOpenError::LookupError(nix::errno::Errno::EBUSY) => {
-                        std::io::Error::new(std::io::ErrorKind::Other, format!("Device or resource busy: {}", interface))
-                    }
-                    CanSocketOpenError::LookupError(nix::errno::Errno::ENETDOWN) => {
-                        std::io::Error::new(std::io::ErrorKind::Other, format!("Network is down: {}", interface))
-                    }
-                    _ => {
-                        std::io::Error::new(std::io::ErrorKind::Other, format!("Error opening socket: {}", e))
-                    }
-                }
-            }) {
+            let socket = match CanSocket::open(&interface) {
                 Ok(s) => {
                     // Set the atomicbool to True
                     socket_opened_clone.store(true, std::sync::atomic::Ordering::Relaxed);
@@ -165,7 +144,7 @@ impl JBus {
 
             // IF the filters list is not empty, set the filters on the socket
             if !filters.is_empty() {
-                socket.filter_drop_all()?;
+                socket.set_filter_drop_all()?;
                 socket.set_filters(&filters)?;
             }
 
