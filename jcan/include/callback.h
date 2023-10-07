@@ -6,7 +6,7 @@
 #include <map>
 #include <functional>
 
-namespace org::jcan
+namespace leigh { namespace jcan
 {
 
 // This is a forward declaration of the Frame struct, which is defined in the Rust library
@@ -50,7 +50,13 @@ public:
 
   void spin();
   void close();
+
+  bool is_open();
+  bool callbacks_enabled();
+  void set_callbacks_enabled(bool mode);
+  void drop_buffered_frames();
 };
 
 std::unique_ptr<Bus> new_bus();
+}
 }

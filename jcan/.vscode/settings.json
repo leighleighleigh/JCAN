@@ -69,5 +69,6 @@
         "variant": "cpp",
         "bitset": "cpp",
         "semaphore": "cpp"
-    }
+    },
+    "ros.distro": "humble"
 }

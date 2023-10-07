@@ -7,6 +7,7 @@ extern crate pyo3;
 extern crate jcan;
 
 use std::collections::HashMap;
+use std::time::Duration;
 
 use pyo3::exceptions::{PyOSError, PyRuntimeError, PyValueError, PyTypeError};
 use pyo3::prelude::*;
@@ -65,10 +66,31 @@ impl PyJBus {
         })?;
         Ok(())
     }
+
+    fn is_open(&mut self) -> bool {
+        self.bus.is_open()
+    }
+
+    fn callbacks_enabled(&mut self) -> bool { 
+        self.bus.callbacks_enabled()
+    }
+
+    fn set_callbacks_enabled(&mut self, mode : bool) {
+        self.bus.set_callbacks_enabled(mode)
+    }
     
-    // Implement the receive method for the PyJBus
     fn receive(&mut self) -> PyResult<PyJFrame> {
         let frame = self.bus.receive().map_err(|e| {
+            PyOSError::new_err(format!("{}", e))
+        })?;
+        Ok(PyJFrame {
+            frame,
+        })
+    }
+
+    fn receive_with_timeout(&mut self, timeout_ms : u64) -> PyResult<PyJFrame> {
+        let duration = Duration::from_millis(timeout_ms);
+        let frame = self.bus.receive_with_timeout(Some(duration)).map_err(|e| {
             PyOSError::new_err(format!("{}", e))
         })?;
         Ok(PyJFrame {
@@ -79,6 +101,13 @@ impl PyJBus {
     // Implement the send method for the PyJBus
     fn send(&mut self, frame: PyJFrame) -> PyResult<()> {
         self.bus.send(frame.frame).map_err(|e| {
+            PyOSError::new_err(format!("{}", e))
+        })?;
+        Ok(())
+    }
+
+    fn drop_buffered_frames(&mut self) -> PyResult<()> {
+        self.bus.drop_buffered_frames().map_err(|e| {
             PyOSError::new_err(format!("{}", e))
         })?;
         Ok(())
@@ -110,6 +139,7 @@ impl PyJBus {
         }).collect())
     }
 
+
     // Implement the add_callback method for the PyJBus, which takes a function
     // and adds it to the list of callbacks
     fn add_callback(&mut self, frame_id: u32, callback: PyObject) -> PyResult<()> {
@@ -138,6 +168,12 @@ impl PyJBus {
     // Implement the spin() method, which first calls the underlying receive_from_thread_buffer to retrieve all the frames
     // ,before calling the appropriate callback functions
     fn spin(&mut self) -> PyResult<()> {
+
+        // if callbacks are not enabled, this does nothing!
+        if !self.callbacks_enabled() {
+            return Ok(())
+        }
+
         let frames = self.receive_from_thread_buffer()?;
         let _gil = Python::with_gil(|py| {
             for frame in frames {

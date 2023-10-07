@@ -2,7 +2,7 @@
 #include "jcan/src/lib.rs.h"
 #include <stdio.h>
 
-namespace org::jcan
+namespace leigh { namespace jcan
 {
    Bus::Bus() {
       this->jBus = new_jbus().into_raw();
@@ -23,6 +23,22 @@ namespace org::jcan
 
    void Bus::close() {
       this->jBus->close();
+   }
+
+   void Bus::set_callbacks_enabled(bool mode) {
+      this->jBus->set_callbacks_enabled(mode);
+   }
+
+   bool Bus::callbacks_enabled() {
+      return this->jBus->callbacks_enabled();
+   }
+
+   bool Bus::is_open() {
+      return this->jBus->is_open();
+   }
+
+   void Bus::drop_buffered_frames() {
+      return this->jBus->drop_buffered_frames();
    }
 
    void Bus::set_id_filter(std::vector<uint32_t> allowed_ids) {
@@ -82,4 +98,5 @@ namespace org::jcan
       }
     }
   }
+}
 }
