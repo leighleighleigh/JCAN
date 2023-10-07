@@ -40,6 +40,7 @@ pub mod ffi {
 
         fn send(self: &mut JBus, frame: JFrame) -> Result<()>;
         fn receive(self: &mut JBus) -> Result<JFrame>;
+        fn receive_with_timeout_millis(self: &mut JBus, timeout_ms : u64) -> Result<JFrame>;
 
         #[cxx_name = "new_frame"]
         fn new_jframe(id: u32, data: Vec<u8>) -> Result<JFrame>;
@@ -356,6 +357,10 @@ impl JBus {
     // Blocks until a frame is received. Behind the scenes, uses a channel to receive frames via spin thread.
     pub fn receive(&mut self) -> Result<ffi::JFrame, std::io::Error> {
         self.receive_with_timeout(None)
+    }
+
+    pub fn receive_with_timeout_millis(&mut self, timeout_ms : u64) -> Result<ffi::JFrame, std::io::Error> {
+        self.receive_with_timeout(Some(Duration::from_millis(timeout_ms)))
     }
 
     // Blocks until a frame is received, with a specific timeout.

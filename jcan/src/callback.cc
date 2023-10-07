@@ -62,6 +62,10 @@ namespace leigh { namespace jcan
       return this->jBus->receive();
    }
 
+   Frame Bus::receive_with_timeout(uint64_t timeout_ms) {
+      return this->jBus->receive_with_timeout_millis(timeout_ms);
+   }
+
    std::vector<Frame> Bus::receive_from_thread_buffer() {
       std::vector<Frame> stdv;
       auto frames = this->jBus->receive_from_thread_buffer();
@@ -74,6 +78,11 @@ namespace leigh { namespace jcan
   }
 
   void Bus::spin() {
+    // If callbacks are not enabled, return immediately
+    if (!this->callbacks_enabled()) {
+      return;
+    }
+
     // Get a vector of frames from the bus (receive_from_thread_buffer)
     auto frames = this->receive_from_thread_buffer();
 

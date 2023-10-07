@@ -3,7 +3,7 @@
 #include <vector>
 #include "jcan/jcan.h"
 
-using namespace org::jcan;
+using namespace leigh::jcan;
 
 /* 
 A basic example of sending and recieving CAN Frames with JCAN

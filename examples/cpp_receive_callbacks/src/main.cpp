@@ -3,7 +3,7 @@
 #include <vector>
 #include "jcan/jcan.h"
 #include <unistd.h>
-using namespace org::jcan;
+using namespace leigh::jcan;
 
 /* 
 C++-14 example of using the jcan library with callbacks.

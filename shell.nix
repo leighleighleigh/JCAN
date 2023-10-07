@@ -10,6 +10,8 @@ let
 in
 pkgs.mkShell {
     nativeBuildInputs = with pkgs; [
+      rustup
+      cargo
       jcan
       jcan_python
       python3
@@ -24,5 +26,5 @@ pkgs.mkShell {
     echo "Run 'mk-vcan' and 'rm-vcan' to use virtual CAN interfaces!"
     '';
 
-  LD_LIBRARY_PATH = "${pkgs.stdenv.cc.cc.lib}/lib";
+  #LD_LIBRARY_PATH = "${pkgs.stdenv.cc.cc.lib}/lib";
 }

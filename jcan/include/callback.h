@@ -36,6 +36,7 @@ public:
 
   void send(Frame frame);
   Frame receive();
+  Frame receive_with_timeout(uint64_t timeout_ms);
 
   std::vector<Frame> receive_from_thread_buffer();
 
