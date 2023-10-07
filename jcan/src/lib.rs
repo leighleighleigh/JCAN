@@ -30,6 +30,7 @@ pub mod ffi {
         fn set_id_filter_mask(self: &mut JBus, allowed: u32, allowed_mask: u32) -> Result<()>;
 
         fn open(self: &mut JBus, interface: String, tx_queue_len: u16, rx_queue_len: u16) -> Result<()>;
+        fn close(self: &mut JBus) -> Result<()>;
         fn is_open(self: &JBus) -> bool;
 
         fn receive_from_thread_buffer(self: &mut JBus) -> Result<Vec<JFrame>>;
@@ -346,7 +347,7 @@ impl JBus {
         // Receive a frame
         let frame = rx.recv().unwrap();
         // Return the frame
-        return Ok(frame);
+        Ok(frame)
     }
 
     // Blocks until a frame is sent
@@ -540,24 +541,23 @@ impl ffi::JFrame {
     pub fn get_data(&self) -> Vec<u8> {
         self.data.clone()
     }
-
-    pub fn to_string(&self) -> String {
-        // Prints in the same format as CANDUMP
-        // e.g: vcan0  123   [2]  10 20
-        let mut s = String::new();
-        s.push_str(&format!("0x{:03X}   [{}]  ", self.id, self.data.len()));
-        for byte in self.data.iter() {
-            s.push_str(&format!("{:02X} ", byte));
-        }
-        s
-    }
 }
 
 // Implement Display for JFrame, used for Rust only
 impl std::fmt::Display for ffi::JFrame {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        // Use the to_string() function to print the JFrame
-        write!(f, "{}", self.to_string()).unwrap();
+        // Prints in the same format as CANDUMP
+        // e.g: vcan0  123   [2]  10 20
+
+        let mut s = String::new();
+
+        s.push_str(&format!("0x{:03X}   [{}]  ", self.id, self.data.len()));
+
+        for byte in self.data.iter() {
+            s.push_str(&format!("{:02X} ", byte));
+        }
+
+        write!(f, "{}", s).unwrap();
         Ok(())
     }
 }

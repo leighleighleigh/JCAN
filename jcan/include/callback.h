@@ -49,6 +49,7 @@ public:
   }
 
   void spin();
+  void close();
 };
 
 std::unique_ptr<Bus> new_bus();

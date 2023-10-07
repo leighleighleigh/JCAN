@@ -58,6 +58,13 @@ impl PyJBus {
         })?;
         Ok(())
     }
+
+    fn close(&mut self) -> PyResult<()> {
+        self.bus.close().map_err(|e| {
+            PyOSError::new_err(format!("{}", e))
+        })?;
+        Ok(())
+    }
     
     // Implement the receive method for the PyJBus
     fn receive(&mut self) -> PyResult<PyJFrame> {

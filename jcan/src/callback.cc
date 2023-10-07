@@ -21,6 +21,10 @@ namespace org::jcan
       this->jBus->open(name, tx_queue_len, rx_queue_len);
    }
 
+   void Bus::close() {
+      this->jBus->close();
+   }
+
    void Bus::set_id_filter(std::vector<uint32_t> allowed_ids) {
       // Convert to a Rust Vec by pushing back each element
       auto rust_vec = rust::Vec<uint32_t>();
