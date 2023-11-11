@@ -94,7 +94,7 @@ C++ example showing Frame building and sending.
 #include <vector>
 #include "jcan/jcan.h"
 
-using namespace org::jcan;
+using namespace leigh::jcan;
 
 /* 
 A basic example of sending and recieving CAN Frames with JCAN
@@ -145,28 +145,24 @@ int main(int argc, char **argv) {
 </details>
 
 ## Quirks / Known Bugs
- - Workspace-level `cargo build` is broken, use `crossbuild.sh` instead (as detailed below)
  - A dedicated `scripts-postbuild` crate is used to move all the build-artifacts (`libjcan.a`, `jcan.h`, etc...) into `/out/<profile>/<target>/jcan`
 
 ## Development
 ```bash
+# [Required] Install Nix or NixOS, visit
+https://nixos.org/download.html
+
 # Get code
 git clone https://github.com/leighleighleigh/JCAN
 
-# Setup the build environment, which
-# - Installs rust 
-# - Installs cross-rs
-# - Installs podman
-# - Sets up a python virtual environment in the repo, under .venv
-./devsetup.sh
+# To build the C++ libraries for your Nix system,
+# in a development environment:
+nix-shell
 
-## Run the build scripts!
-# (This will automatically source .venv/bin/activate if needed)
+# To build cross-compiled C++ libraries for x86 and ARM64,
+# and produce Python 3.8+ compatible wheels:
+nix-shell cross-build.nix
 
-./clean.sh
-./crossbuild.sh
-./release.sh
-
-# Build outputs, including python wheels, can then be found in the ./release folder!
+# Build outputs, including python wheels, can then be found in the ./out/ folder
 
 ```
