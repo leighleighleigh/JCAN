@@ -1,17 +1,24 @@
-{ lib
-, buildPythonPackage
-, rustPlatform
-, cargo
-, rustc
-, setuptools-rust
-, toml
+{ pkgs ? import <nixpkgs> {}
+, lib ? pkgs.lib
+, buildPythonPackage ? pkgs.python3Packages.buildPythonPackage
+, rustPlatform ? pkgs.rustPlatform
+, cargo ? pkgs.cargo
+, rustc ? pkgs.rustc
+, setuptools-rust ? pkgs.python3Packages.setuptools-rust
+, toml ? pkgs.python3Packages.toml
 }:
 
 buildPythonPackage rec {
   name = "jcan-python";
 
+  doCheck = false;
+
+  outputs = [ "out" ];
+
   src = lib.cleanSource ./.;
-  sourceRoot = "source/jcan-python";
+  sourceRoot = "source/jcan_python";
+
+  dontPatchELF = true;
 
   cargoDeps = rustPlatform.importCargoLock {
     lockFile = ./Cargo.lock;

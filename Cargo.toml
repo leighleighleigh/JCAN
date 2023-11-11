@@ -1,6 +1,7 @@
 [workspace]
+resolver = "2"
 members = [
     "jcan",
-    "jcan-python",
-    "scripts-postbuild",
+    "jcan_python",
+    "scripts-postbuild"
 ]
