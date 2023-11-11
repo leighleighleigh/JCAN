@@ -205,7 +205,7 @@ dependencies = [
 
 [[package]]
 name = "jcan"
-version = "0.1.11"
+version = "0.2.0"
 dependencies = [
  "cc",
  "cxx",
@@ -219,11 +219,11 @@ dependencies = [
 
 [[package]]
 name = "jcan_python"
-version = "0.1.11"
+version = "0.2.0"
 dependencies = [
  "jcan",
  "pyo3",
- "pyo3-build-config 0.19.2",
+ "pyo3-build-config",
 ]
 
 [[package]]
@@ -396,7 +396,7 @@ dependencies = [
  "libc",
  "memoffset 0.6.5",
  "parking_lot",
- "pyo3-build-config 0.17.3",
+ "pyo3-build-config",
  "pyo3-ffi",
  "pyo3-macros",
  "unindent",
@@ -414,23 +414,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "pyo3-build-config"
-version = "0.19.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "076c73d0bc438f7a4ef6fdd0c3bb4732149136abd952b110ac93e4edb13a6ba5"
-dependencies = [
- "once_cell",
- "target-lexicon",
-]
-
-[[package]]
 name = "pyo3-ffi"
 version = "0.17.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0f6cb136e222e49115b3c51c32792886defbfb0adead26a688142b346a0b9ffc"
 dependencies = [
  "libc",
- "pyo3-build-config 0.17.3",
+ "pyo3-build-config",
 ]
 
 [[package]]

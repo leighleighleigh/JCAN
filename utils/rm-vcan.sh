@@ -1,15 +1,9 @@
 #!/usr/bin/env bash
 
 # Removes all VCAN interfaces
-# Must have root privleges to run this script
-
-if (( $EUID != 0 )); then
-  echo "This script must be run as root"
-  exit 1
-fi
 
 # Read the vcan interface names, as a multi-line string
-RAWIFACES="$(ip link show type vcan | grep 'vcan' | cut -f2 -d':' | cut -f2 -d' ')"
+RAWIFACES="$(sudo ip link show type vcan | grep 'vcan' | cut -f2 -d':' | cut -f2 -d' ')"
 
 if [ -z "$RAWIFACES" ];
 then
@@ -43,14 +37,14 @@ if [ ${#IFACES[@]} ]; then
   # If we have not been asked to delete all VCANs, just delete the last one.
   if [ -z "$RM_ALL" ]; then
     IFACE="${IFACES[${#IFACES[@]}-1]}"
-    ip link del ${IFACE}
+    sudo ip link del ${IFACE}
     echo "Removed ${IFACE}"
   else
     # Otherwise, delete them all!
     for (( i=0; i<${#IFACES[@]}; i++ ))
     do
       IFACE=${IFACES[i]}
-      ip link del ${IFACE}
+      sudo ip link del ${IFACE}
       echo "Removed ${IFACE}"
     done
   fi

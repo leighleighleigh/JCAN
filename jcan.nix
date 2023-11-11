@@ -1,5 +1,6 @@
-{ lib
-, rustPlatform
+{ pkgs ? import <nixpkgs> {}
+, lib ? pkgs.lib
+, rustPlatform ? pkgs.rustPlatform
 }:
 
 rustPlatform.buildRustPackage {
@@ -10,6 +11,7 @@ rustPlatform.buildRustPackage {
   cargoLock.lockFile = ./Cargo.lock;
 
   buildAndTestSubdir = "jcan";
+  doCheck = false;
 
   outputs = [ "out" "dev" ];
 

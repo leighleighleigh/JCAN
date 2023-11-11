@@ -25,4 +25,5 @@
 # Ignore pycache
 **/__pycache__/**
 
-
+# Ignore nix
+result
