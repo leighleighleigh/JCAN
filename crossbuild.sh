@@ -87,7 +87,7 @@ then
 fi
 
 # Build for aarch64
-build_target "aarch64-unknown-linux-gnu"
+#build_target "aarch64-unknown-linux-gnu"
 
 # Build for x86_64
 build_target "x86_64-unknown-linux-gnu"

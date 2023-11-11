@@ -1,4 +1,3 @@
-#[allow(unused_must_use)]
 use std::{env, fs, path::{Path, PathBuf}};
 
 fn project_root() -> PathBuf {

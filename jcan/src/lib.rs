@@ -9,7 +9,7 @@ use std::sync::atomic::Ordering;
 use std::thread;
 use std::time::Duration;
 
-#[cxx::bridge(namespace = "org::jcan")]
+#[cxx::bridge(namespace = "leigh::jcan")]
 pub mod ffi {
 
     #[cxx_name = "Frame"]
@@ -30,12 +30,17 @@ pub mod ffi {
         fn set_id_filter_mask(self: &mut JBus, allowed: u32, allowed_mask: u32) -> Result<()>;
 
         fn open(self: &mut JBus, interface: String, tx_queue_len: u16, rx_queue_len: u16) -> Result<()>;
+        fn close(self: &mut JBus) -> Result<()>;
         fn is_open(self: &JBus) -> bool;
+        fn callbacks_enabled(self: &JBus) -> bool;
+        fn set_callbacks_enabled(self: &mut JBus, mode : bool);
+        fn drop_buffered_frames(self: &mut JBus) -> Result<()>;
 
         fn receive_from_thread_buffer(self: &mut JBus) -> Result<Vec<JFrame>>;
 
         fn send(self: &mut JBus, frame: JFrame) -> Result<()>;
         fn receive(self: &mut JBus) -> Result<JFrame>;
+        fn receive_with_timeout_millis(self: &mut JBus, timeout_ms : u64) -> Result<JFrame>;
 
         #[cxx_name = "new_frame"]
         fn new_jframe(id: u32, data: Vec<u8>) -> Result<JFrame>;
@@ -50,8 +55,6 @@ pub mod ffi {
     unsafe extern "C++" {
         include!("jcan/include/callback.h");
         type Bus;
-        // fn hello() -> Result<()>;
-        // fn hello_bus() -> Result<()>;
     }
 }
 
@@ -72,6 +75,16 @@ pub struct JBus {
 
     // ARC Boolean to communicate if the socket is open, or if we should close it
     socket_opened: Arc<std::sync::atomic::AtomicBool>,
+
+    // ARC Boolean to change between blocking+non-blocking operational modes.
+    callbacks_enabled: Arc<std::sync::atomic::AtomicBool>,
+    // ASYNC MODE (default)
+    //   - receive() will return a frame from the RX buffer
+    //   - spin() will trigger callbacks registered in the Python/C++ libraries
+    // NON-ASYNC MODE
+    //   - receive() will first drop all buffered frames, and wait for a new one. 
+    //               this emulates a typical 'blocking frame receive' operation.
+    //   - spin() will be disabled - callbacks are NOT CALLED.
 }
 
 // Implements JBus methods
@@ -311,6 +324,17 @@ impl JBus {
         self.spin_handle.is_some() && self.socket_opened.load(Ordering::Relaxed)
     }
 
+    // Set the asyn / non-asyn mode.
+    // Callbacks are disabled in non-async mode.
+    pub fn set_callbacks_enabled(&self, mode : bool) {
+        self.callbacks_enabled.store(mode, Ordering::Relaxed)
+    }
+
+    // Check if we are operating in 'blocking mode'.
+    pub fn callbacks_enabled(&self) -> bool {
+        self.callbacks_enabled.load(Ordering::Relaxed)
+    }
+
     // Close the bus
     pub fn close(&mut self) -> Result<(), std::io::Error> {
         // Check if we are open
@@ -331,8 +355,16 @@ impl JBus {
     }
 
     // Blocks until a frame is received. Behind the scenes, uses a channel to receive frames via spin thread.
-    // WARNING: This will prevent frames from being handled in the callbacks.
     pub fn receive(&mut self) -> Result<ffi::JFrame, std::io::Error> {
+        self.receive_with_timeout(None)
+    }
+
+    pub fn receive_with_timeout_millis(&mut self, timeout_ms : u64) -> Result<ffi::JFrame, std::io::Error> {
+        self.receive_with_timeout(Some(Duration::from_millis(timeout_ms)))
+    }
+
+    // Blocks until a frame is received, with a specific timeout.
+    pub fn receive_with_timeout(&mut self, timeout : Option<Duration>) -> Result<ffi::JFrame, std::io::Error> {
         // Check if we are open
         if !self.is_open() {
             return Err(std::io::Error::new(
@@ -341,12 +373,38 @@ impl JBus {
             ));
         }
 
-        // Clone the spin_recv_rx channel
-        let rx = self.spin_recv_rx.as_ref().unwrap().clone();
-        // Receive a frame
-        let frame = rx.recv().unwrap();
-        // Return the frame
-        return Ok(frame);
+        if ! self.callbacks_enabled() {
+            // In blocking mode, receive() will first clear the RX buffer, then wait for a new frame.
+            self.drop_buffered_frames().unwrap();
+        } 
+
+        self.recv_internal(timeout)
+    }
+
+    // Receive frame logic handler
+    fn recv_internal(&mut self, timeout : Option<Duration>) -> Result<ffi::JFrame, std::io::Error> {
+        if let Some(duration) = timeout {
+            let frame = self
+                .spin_recv_rx
+                .as_ref()
+                .unwrap()
+                .recv_timeout(duration);
+
+            frame.map_err(|_e| {
+                // send ETIMEDOUT error
+                std::io::Error::from_raw_os_error(110)
+            })
+        } else {
+            // receive with blocking
+            let frame = self
+                .spin_recv_rx
+                .as_ref()
+                .unwrap()
+                .recv()
+                .unwrap();
+
+            Ok(frame)
+        }
     }
 
     // Blocks until a frame is sent
@@ -461,6 +519,12 @@ impl JBus {
 
         Ok(frames)
     }
+
+    pub fn drop_buffered_frames(&mut self) -> Result<(), std::io::Error> {
+        // makes a call to receive_from_thread_buffer, hence clearing the buffer.
+        let _ = self.receive_from_thread_buffer();
+        Ok(())
+    }
 }
 
 // Builder for JBus, used to create C++ instances of the opaque JBus type
@@ -484,6 +548,7 @@ pub fn new_jbus() -> Result<Box<JBus>, std::io::Error> {
         spin_recv_rx: None,
         spin_send_tx: None,
         socket_opened: Arc::new(std::sync::atomic::AtomicBool::new(false)),
+        callbacks_enabled: Arc::new(std::sync::atomic::AtomicBool::new(true)),
     };
 
     // Return the JBus
@@ -532,7 +597,7 @@ impl ffi::JFrame {
             ));
         }
 
-        self.data = data.clone();
+        self.data = data;
         Ok(())
     }
 
@@ -540,24 +605,23 @@ impl ffi::JFrame {
     pub fn get_data(&self) -> Vec<u8> {
         self.data.clone()
     }
-
-    pub fn to_string(&self) -> String {
-        // Prints in the same format as CANDUMP
-        // e.g: vcan0  123   [2]  10 20
-        let mut s = String::new();
-        s.push_str(&format!("0x{:03X}   [{}]  ", self.id, self.data.len()));
-        for byte in self.data.iter() {
-            s.push_str(&format!("{:02X} ", byte));
-        }
-        s
-    }
 }
 
 // Implement Display for JFrame, used for Rust only
 impl std::fmt::Display for ffi::JFrame {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        // Use the to_string() function to print the JFrame
-        write!(f, "{}", self.to_string()).unwrap();
+        // Prints in the same format as CANDUMP
+        // e.g: vcan0  123   [2]  10 20
+
+        let mut s = String::new();
+
+        s.push_str(&format!("0x{:03X}   [{}]  ", self.id, self.data.len()));
+
+        for byte in self.data.iter() {
+            s.push_str(&format!("{:02X} ", byte));
+        }
+
+        write!(f, "{}", s).unwrap();
         Ok(())
     }
 }
@@ -576,6 +640,7 @@ impl From<CanFrame> for ffi::JFrame {
 }
 
 // Implement Into<CanFrame> for ffi::JFrame
+#[allow(clippy::from_over_into)]
 impl Into<CanFrame> for ffi::JFrame {
     fn into(self) -> CanFrame {
         // First check if id needs to be Standard or Extended

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Sets up a virtual CAN bus interface, "vcan0"
 #

@@ -2,7 +2,7 @@
 #include "jcan/src/lib.rs.h"
 #include <stdio.h>
 
-namespace org::jcan
+namespace leigh { namespace jcan
 {
    Bus::Bus() {
       this->jBus = new_jbus().into_raw();
@@ -19,6 +19,26 @@ namespace org::jcan
 
    void Bus::open(const char *name, uint16_t tx_queue_len, uint16_t rx_queue_len) {
       this->jBus->open(name, tx_queue_len, rx_queue_len);
+   }
+
+   void Bus::close() {
+      this->jBus->close();
+   }
+
+   void Bus::set_callbacks_enabled(bool mode) {
+      this->jBus->set_callbacks_enabled(mode);
+   }
+
+   bool Bus::callbacks_enabled() {
+      return this->jBus->callbacks_enabled();
+   }
+
+   bool Bus::is_open() {
+      return this->jBus->is_open();
+   }
+
+   void Bus::drop_buffered_frames() {
+      return this->jBus->drop_buffered_frames();
    }
 
    void Bus::set_id_filter(std::vector<uint32_t> allowed_ids) {
@@ -42,6 +62,10 @@ namespace org::jcan
       return this->jBus->receive();
    }
 
+   Frame Bus::receive_with_timeout(uint64_t timeout_ms) {
+      return this->jBus->receive_with_timeout_millis(timeout_ms);
+   }
+
    std::vector<Frame> Bus::receive_from_thread_buffer() {
       std::vector<Frame> stdv;
       auto frames = this->jBus->receive_from_thread_buffer();
@@ -54,6 +78,11 @@ namespace org::jcan
   }
 
   void Bus::spin() {
+    // If callbacks are not enabled, return immediately
+    if (!this->callbacks_enabled()) {
+      return;
+    }
+
     // Get a vector of frames from the bus (receive_from_thread_buffer)
     auto frames = this->receive_from_thread_buffer();
 
@@ -78,4 +107,5 @@ namespace org::jcan
       }
     }
   }
+}
 }
