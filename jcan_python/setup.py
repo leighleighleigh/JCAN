@@ -35,5 +35,5 @@ setup(
 
     # setuptools_rust is required to build,
     # and pytest is required to test
-    #setup_requires=["setuptools-rust", "pytest"],
+    setup_requires=["setuptools-rust", "pytest", "toml"],
 )
