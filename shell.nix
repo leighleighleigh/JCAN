@@ -22,7 +22,7 @@ let
   build-jcan-python = pkgs.writeShellScriptBin "build-jcan-python" ''
     #!/usr/bin/env bash
     cargo clean
-    nix-build -E 'let pkgs = import <nixos> {}; in pkgs.python3Packages.callPackage ./jcan_python.nix {}'
+    nix-build -E 'let pkgs = import <nixos> {crossSystem={config="aarch64-unknown-linux-gnu";};}; in pkgs.python3Packages.callPackage ./jcan_python.nix {pkgs=pkgs;}'
   '';
 
   # utility scripts

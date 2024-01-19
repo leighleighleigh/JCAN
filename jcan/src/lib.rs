@@ -547,7 +547,7 @@ pub fn new_jbus() -> Result<Box<JBus>, std::io::Error> {
     // make a logger which shows Warnings by default,
     // but can show other levels by setting
     // JCAN_LOG=info/debug/fatal/error, etc
-    match env_logger::builder().filter_level(log::LevelFilter::Warn).parse_env("JCAN_LOG").try_init() {
+    match env_logger::builder().filter_level(log::LevelFilter::Error).parse_env("JCAN_LOG").try_init() {
         Ok(_) => {}
         Err(_) => {
             info!("env_logger already initialised");
