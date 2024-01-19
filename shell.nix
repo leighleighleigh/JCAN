@@ -15,9 +15,15 @@ let
     ];
   };
 
-  # rust/C++ library, and python wrapper
-  jcan = pkgs.callPackage ./jcan.nix {};
+  #jcan = pkgs.callPackage ./jcan.nix {};
   jcan-python = pkgs.python3Packages.callPackage ./jcan_python.nix {};
+  
+  # useful script to build into a local ./result/ path.
+  build-jcan-python = pkgs.writeShellScriptBin "build-jcan-python" ''
+    #!/usr/bin/env bash
+    cargo clean
+    nix-build -E 'let pkgs = import <nixos> {}; in pkgs.python3Packages.callPackage ./jcan_python.nix {}'
+  '';
 
   # utility scripts
   mk-vcan = pkgs.writeShellScriptBin "mk-vcan" (builtins.readFile ./utils/mk-vcan.sh);
@@ -29,9 +35,8 @@ pkgs.mkShell rec {
       can-utils
       cargo
       gcc
-      jcan
+      #jcan
       jcan-python
-      mk-vcan
       pkg-config
       podman
       python3
@@ -39,10 +44,12 @@ pkgs.mkShell rec {
       python3Packages.pytest
       python3Packages.setuptools-rust
       python3Packages.toml
-      rm-vcan
       rust-analyzer
       rustup
       stdenv.cc
+      rm-vcan
+      mk-vcan
+      build-jcan-python
     ]);
   
   LD_LIBRARY_PATH = "${pkgs.lib.makeLibraryPath buildInputs}";
