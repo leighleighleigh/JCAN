@@ -1,2 +1,4 @@
 include Cargo.toml
+include ./jcan/jcan_python.pyi
+include ./jcan/py.typed
 recursive-include src *

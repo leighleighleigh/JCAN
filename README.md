@@ -159,7 +159,7 @@ git clone https://github.com/leighleighleigh/JCAN
 # in a development environment:
 nix-shell
 
-# To build cross-compiled C++ libraries for x86 and ARM64,
+# (BROKEN) To build cross-compiled C++ libraries for x86 and ARM64,
 # and produce Python 3.8+ compatible wheels:
 nix-shell cross-build.nix
 
