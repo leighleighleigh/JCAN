@@ -33,7 +33,11 @@ setup(
     ],
     include_package_data=True,
 
+    package_data={
+        "jcan": ["py.typed", "jcan_python.pyi"],
+    },
+
     # setuptools_rust is required to build,
     # and pytest is required to test
-    setup_requires=["setuptools-rust", "pytest", "toml"],
+    # setup_requires=["setuptools-rust", "pytest", "toml"],
 )

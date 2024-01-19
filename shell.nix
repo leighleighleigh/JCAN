@@ -37,6 +37,8 @@ pkgs.mkShell rec {
       python3
       python3Packages.pip
       python3Packages.pytest
+      python3Packages.setuptools-rust
+      python3Packages.toml
       rm-vcan
       rust-analyzer
       rustup

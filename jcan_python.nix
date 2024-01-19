@@ -1,17 +1,12 @@
 { pkgs ? import <nixpkgs> {}
 , lib ? pkgs.lib
 , buildPythonPackage ? pkgs.python3Packages.buildPythonPackage
-, rustPlatform ? pkgs.rustPlatform
-, cargo ? pkgs.cargo
-, rustc ? pkgs.rustc
-, setuptools-rust ? pkgs.python3Packages.setuptools-rust
-, toml ? pkgs.python3Packages.toml
 }:
 
 buildPythonPackage rec {
   name = "jcan-python";
 
-  doCheck = false;
+  doCheck = true;
 
   outputs = [ "out" ];
 
@@ -20,16 +15,18 @@ buildPythonPackage rec {
 
   dontPatchELF = true;
 
-  cargoDeps = rustPlatform.importCargoLock {
+  cargoDeps = pkgs.rustPlatform.importCargoLock {
     lockFile = ./Cargo.lock;
   };
 
-  nativeBuildInputs = [
+  nativeBuildInputs = with pkgs; [
     cargo
     rustPlatform.cargoSetupHook
     rustc
-    setuptools-rust
-    toml
+    python3Packages.setuptools-rust
+    python3Packages.toml
+    python3Packages.pip
+    python3Packages.pytest
   ];
 
   postPatch = ''
