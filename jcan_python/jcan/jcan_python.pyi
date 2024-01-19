@@ -20,6 +20,7 @@ class Frame:
     """
 
 class Bus:
+    def __init__(self) -> None: ...
     def open(self, interface: str, tx_queue_len: int = 2, rx_queue_len: int = 256) -> None: ...
     """
     :param: interface: The name of the CAN interface to open, e.g. "vcan0".
