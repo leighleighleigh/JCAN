@@ -83,11 +83,11 @@ in
     targetPkgs = pkgs: [
       pkgs.rustup
       pkgs.cargo
-      pkgs.python3
+      pkgs.python310
       pkgs.python310Packages.pip
       pkgs.python310Packages.wheel
       pkgs.python310Packages.setuptools-rust
-      pkgs.python3Packages.toml
+      pkgs.python310Packages.toml
       pkgs.docker
       #pkgs.podman
       pkgs.hostname
