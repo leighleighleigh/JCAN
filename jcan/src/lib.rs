@@ -544,9 +544,10 @@ impl JBus {
 // Builder for JBus, used to create C++ instances of the opaque JBus type
 // Takes in a String interface
 pub fn new_jbus() -> Result<Box<JBus>, std::io::Error> {
-    // Initialise the logger, if it hasn't already been initialised
-    // This is done by the first call to new_jbus()
-    match env_logger::builder().filter_level(log::LevelFilter::Warn).try_init() {
+    // make a logger which shows Warnings by default,
+    // but can show other levels by setting
+    // JCAN_LOG=info/debug/fatal/error, etc
+    match env_logger::builder().filter_level(log::LevelFilter::Warn).parse_env("JCAN_LOG").try_init() {
         Ok(_) => {}
         Err(_) => {
             info!("env_logger already initialised");

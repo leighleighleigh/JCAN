@@ -32,11 +32,8 @@ setup(
         )
     ],
     include_package_data=True,
-    # Requirements
-    # install_requires=[
-    #     "setuptools-rust",
-    # ],
-    # setup_requires=[
-    #     "setuptools-rust",
-    # ],
+
+    # setuptools_rust is required to build,
+    # and pytest is required to test
+    #setup_requires=["setuptools-rust", "pytest"],
 )
