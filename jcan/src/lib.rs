@@ -1,9 +1,10 @@
 extern crate socketcan;
 
-use log::{debug, error, warn};
+use log::{debug, info, error, warn};
 use embedded_can::{ExtendedId, Frame as EmbeddedFrame, Id, StandardId};
 use socketcan::{CanFilter, CanFrame, CanSocket, Socket};
 use std::sync::mpsc;
+use std::sync::mpsc::TrySendError;
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
 use std::thread;
@@ -13,7 +14,7 @@ use std::time::Duration;
 pub mod ffi {
 
     #[cxx_name = "Frame"]
-    #[derive(Clone)]
+    #[derive(Clone,PartialEq,Eq)]
     pub struct JFrame {
         id: u32,
         data: Vec<u8>,
@@ -184,15 +185,21 @@ impl JBus {
                             let frame: ffi::JFrame = frame.into();
 
                             // Send the frame to the channel
-                            match tx.send(frame) {
+                            match tx.try_send(frame) {
                                 Ok(_) => {
                                     // All good!
                                     debug!("jcan_recv_thread queued a frame for next spin()");
                                 }
                                 Err(e) => {
-                                    // This error can only occur if there are no receivers
-                                    // If this happens, the main thread has closed, and we should also close
-                                    warn!("jcan_recv_thread failed to queue frame: {}",e);
+                                    // This error can only occur if there are no receivers, or the buffer is full.
+                                    match e {
+                                      TrySendError::Full(_) => {
+                                        debug!("jcan_recv_thread dropped a received frame, buffer is full");
+                                      },
+                                      TrySendError::Disconnected(_) => {
+                                        break;
+                                      },
+                                    }
                                 }
                             }
                         }
@@ -212,6 +219,13 @@ impl JBus {
                                 // This means the socket is closed, break the loop.
                                 // Check the os error code
                                 _ => {
+                                    // Check if .close() was called
+                                    if !socket_opened_clone.load(Ordering::Relaxed) {
+                                      info!("jcan_recv_thread closed");
+                                      break;
+                                    }
+
+                                    // Print different logs
                                     match e.raw_os_error() {
                                         Some(19) => {
                                             // Network is down
@@ -530,12 +544,13 @@ impl JBus {
 // Builder for JBus, used to create C++ instances of the opaque JBus type
 // Takes in a String interface
 pub fn new_jbus() -> Result<Box<JBus>, std::io::Error> {
-    // Initialise the logger, if it hasn't already been initialised
-    // This is done by the first call to new_jbus()
-    match env_logger::builder().filter_level(log::LevelFilter::Warn).try_init() {
+    // make a logger which shows Warnings by default,
+    // but can show other levels by setting
+    // JCAN_LOG=info/debug/fatal/error, etc
+    match env_logger::builder().filter_level(log::LevelFilter::Error).parse_env("JCAN_LOG").try_init() {
         Ok(_) => {}
         Err(_) => {
-            warn!("env_logger already initialised");
+            info!("env_logger already initialised");
         }
     }
 
@@ -610,15 +625,19 @@ impl ffi::JFrame {
 // Implement Display for JFrame, used for Rust only
 impl std::fmt::Display for ffi::JFrame {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        // Prints in the same format as CANDUMP
+        // OLD: Prints in the same format as CANDUMP
         // e.g: vcan0  123   [2]  10 20
+
+        // NEW: Prints in the same format as cansend input
+        // e.g: cansend vcan0 123#AABBCC
 
         let mut s = String::new();
 
-        s.push_str(&format!("0x{:03X}   [{}]  ", self.id, self.data.len()));
+        //s.push_str(&format!("0x{:03X}   [{}]  ", self.id, self.data.len()));
+        s.push_str(&format!("{:03X}#", self.id));
 
         for byte in self.data.iter() {
-            s.push_str(&format!("{:02X} ", byte));
+            s.push_str(&format!("{:02X}", byte));
         }
 
         write!(f, "{}", s).unwrap();

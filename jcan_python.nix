@@ -1,35 +1,41 @@
 { pkgs ? import <nixpkgs> {}
-, lib ? pkgs.lib
-, buildPythonPackage ? pkgs.python3Packages.buildPythonPackage
-, rustPlatform ? pkgs.rustPlatform
-, cargo ? pkgs.cargo
-, rustc ? pkgs.rustc
-, setuptools-rust ? pkgs.python3Packages.setuptools-rust
-, toml ? pkgs.python3Packages.toml
 }:
 
-buildPythonPackage rec {
+pkgs.python3Packages.buildPythonPackage rec {
   name = "jcan-python";
 
-  doCheck = false;
+  doCheck = true;
+  pythonImportsCheck = [ "jcan" ];
 
-  outputs = [ "out" ];
 
-  src = lib.cleanSource ./.;
+  src = pkgs.lib.cleanSource ./.;
   sourceRoot = "source/jcan_python";
 
+  preBuild = ''
+  # not cleaning causes some issues due to permissions,
+  # for some reason.
+  cargo clean
+
+  #ls $src
+  #exit 0
+  #rm -rf ./target/
+  '';
+
+  outputs = [ "out" ];
   dontPatchELF = true;
 
-  cargoDeps = rustPlatform.importCargoLock {
+  cargoDeps = pkgs.rustPlatform.importCargoLock {
     lockFile = ./Cargo.lock;
   };
 
-  nativeBuildInputs = [
-    cargo
+  buildInputs = with pkgs; [
     rustPlatform.cargoSetupHook
+    cargo
     rustc
-    setuptools-rust
-    toml
+    python3Packages.setuptools-rust
+    python3Packages.toml
+    python3Packages.pip
+    python3Packages.pytest
   ];
 
   postPatch = ''
